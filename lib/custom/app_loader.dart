@@ -23,17 +23,20 @@ Future<T?> showLoader<T>(BuildContext context,
     return process;
   }).onError((e, st) {
     if (e is TimeoutException) {
-      if (context.mounted)
-        context.showSnackBar('error: ' + kNoInternet,
+      if (context.mounted) {
+        context.showSnackBar('error: $kNoInternet',
             theme: SnackbarTheme.error);
+      }
     } else {
-      if (context.mounted)
+      if (context.mounted) {
         context.showSnackBar(e.toString(), theme: SnackbarTheme.error);
+      }
     }
     return Future.value(null);
   }).then((value) {
-    if (context.mounted && Navigator.canPop(context))
+    if (context.mounted && Navigator.canPop(context)) {
       Navigator.of(context).pop();
+    }
     return value;
   });
 }
@@ -49,8 +52,9 @@ Future<Object?> doInBackground({
     result = await process();
     if (callBack != null) callBack();
   } on TimeoutException {
-    if (context.mounted)
+    if (context.mounted) {
       context.showSnackBar(kNoInternet, theme: SnackbarTheme.error);
+    }
   } catch (e) {
     debugPrint(e.toString());
   }

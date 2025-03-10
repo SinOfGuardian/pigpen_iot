@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/provider/user_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,6 +15,7 @@ class ShowPasswordSignup extends _$ShowPasswordSignup {
 
 @Riverpod(keepAlive: true)
 class Registration extends _$Registration {
+  // ignore: unused_field
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -44,10 +44,13 @@ class Registration extends _$Registration {
       }
 
       // Save user data to Firestore
-      await _firestore.collection('users').doc(credential.user!.uid).set({
-        'email': email,
-        'createdAt': DateTime.now(),
-      });
+      // await _firestore.collection('users').doc(credential.user!.uid).set({
+      //   'email': email,
+      //   'createdAt': DateTime.now(),
+      // });
+
+      // Save user data to Firestore
+      await ref.read(activeUserProvider.notifier).addNewUser(email);
 
       // Update the active user in the app
       //await ref.read(activeUserProvider.notifier).addNewUser(email);
@@ -90,7 +93,6 @@ class RegistrationFields extends _$RegistrationFields {
     if (authUser.email.isEmpty) {
       isValid = false;
       newState = newState.copyWith(emailMessage: 'Please enter email');
-      
     } else if (!emailFormat.hasMatch(authUser.email)) {
       isValid = false;
       newState = newState.copyWith(emailMessage: 'Please enter valid email');

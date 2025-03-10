@@ -141,7 +141,6 @@ class RegistrationPage extends ConsumerWidget with InternetConnection {
         width: double.infinity,
         margin: const EdgeInsets.only(top: 20),
         onPressed: () => registerOnPressed(context, ref),
-        // onPressed: () {}, //registerOnPressed(context, ref),
       ),
     );
   }

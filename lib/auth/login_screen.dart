@@ -111,7 +111,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
         icon: EvaIcons.logInOutline,
         width: double.infinity,
         margin: const EdgeInsets.only(top: 2),
-        onPressed: () => null, //loginOnPressed(context, ref),
+        onPressed: () {}, //loginOnPressed(context, ref),
       ),
     );
   }
@@ -121,7 +121,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
     return const Entry.all(
       delay: Duration(milliseconds: 200),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        padding: EdgeInsets.symmetric(vertical: 15.0),
         child: Row(
           children: [
             Expanded(
@@ -131,7 +131,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              padding: EdgeInsets.symmetric(horizontal: 8.0),
               child: Text(
                 "or",
                 textAlign: TextAlign.center,
@@ -161,7 +161,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
       child: SizedBox(
         width: double.infinity, // Full screen width
         child: OutlinedButton.icon(
-          onPressed: () => null, //GoogleOnPressed(context, ref),
+          onPressed: () {}, //GoogleOnPressed(context, ref),
           //add async code here
           //     async {
           //   // Create an instance of AuthService
@@ -201,7 +201,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
           FocusManager.instance.primaryFocus?.unfocus();
           ref.read(loginFieldsProvider.notifier).resetLoginFields();
           ref.read(showPasswordLoginProvider.notifier).reset();
-          context.push('/registration');
+          context.push('/login/registration');
         },
       ),
     );
