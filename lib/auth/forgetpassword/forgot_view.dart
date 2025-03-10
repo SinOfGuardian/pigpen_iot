@@ -70,7 +70,6 @@ class _ForgetPageState extends ConsumerState<ForgetPage> {
         },
       ).show();
     }
-    ;
   }
 
   Widget _graphic(BuildContext context) {
@@ -135,7 +134,7 @@ class _ForgetPageState extends ConsumerState<ForgetPage> {
     return const Entry.all(
       delay: Duration(milliseconds: 200),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 15.0),
+        padding: EdgeInsets.symmetric(vertical: 15.0),
         child: Column(
           children: [
             Padding(

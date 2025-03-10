@@ -201,7 +201,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
           FocusManager.instance.primaryFocus?.unfocus();
           ref.read(loginFieldsProvider.notifier).resetLoginFields();
           ref.read(showPasswordLoginProvider.notifier).reset();
-          context.push('/signin/signup');
+          context.push('/registration');
         },
       ),
     );

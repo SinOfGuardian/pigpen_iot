@@ -15,16 +15,26 @@ const double _kSmallButtonIconSpacing = 5;
 /// The primary button where the color depends on the primary color of the app
 ///
 class AppNotFilledButton extends AppFilledButton {
+  @override
   final String? text;
+  @override
   final void Function()? onPressed;
+  @override
   final IconData? icon;
   final Color? transparentButtonColor;
+  @override
   final double? width;
+  @override
   final EdgeInsetsGeometry? margin;
+  @override
   final double? elevation;
+  @override
   final double? verticalPadding;
+  @override
   final double? horizontalPadding;
+  @override
   final double? iconSpacing;
+  @override
   final Alignment alignment;
 
   const AppNotFilledButton({

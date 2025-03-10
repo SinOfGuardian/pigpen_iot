@@ -169,13 +169,13 @@ class RoleSelectionField extends StatelessWidget {
   final bool isEditing;
 
   const RoleSelectionField({
-    Key? key,
+    super.key,
     required this.labelText,
     required this.initialRole,
     required this.roles,
     required this.onRoleSelected,
     this.isEditing = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -240,13 +240,13 @@ class StatusSelectionField extends StatelessWidget {
   final bool isEditing;
 
   const StatusSelectionField({
-    Key? key,
+    super.key,
     required this.labelText,
     required this.initialRole,
     required this.status,
     required this.onStatusSelected,
     this.isEditing = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
