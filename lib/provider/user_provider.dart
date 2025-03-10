@@ -1,20 +1,26 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pigpen_iot/models/user_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:intl/intl.dart'; // For date formatting
 
-part 'user_provider.g.dart';
+part 'user_provider.g.dart'; // Include the generated file
 
 @riverpod
-Stream<PigpenUser> _pigpenUserStream(Ref ref, String uid) {
-  final path = FirebaseFirestore.instance.collection('users').doc(uid);
-  return path.snapshots().map((snapshot) {
+Stream<PigpenUser> _pigpenUserStream(_PigpenUserStreamRef ref, String uid) {
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .snapshots()
+      .map((snapshot) {
     if (!snapshot.exists) {
-      throw Exception('User not found');
+      throw Exception('User document does not exist');
     }
-    return PigpenUser.fromJson(snapshot.data()!);
+    final profile = snapshot.data()?['profile'] as Map<String, dynamic>?;
+    if (profile == null) {
+      throw Exception('Profile data is missing');
+    }
+    return PigpenUser.fromJson(profile); // Deserialize from the "profile" field
   });
 }
 
@@ -22,48 +28,61 @@ Stream<PigpenUser> _pigpenUserStream(Ref ref, String uid) {
 class ActiveUser extends _$ActiveUser {
   @override
   FutureOr<PigpenUser> build() async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1)); // Simulate delay
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) throw Exception('UID is null');
+    if (uid == null) throw Exception('User is not logged in');
     return await ref.watch(_pigpenUserStreamProvider(uid).future);
   }
 
   Future<void> addNewUser(String email) async {
-    final date = DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now());
+    final date = DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now()).toString();
     final newUser = PigpenUser(
       userId: FirebaseAuth.instance.currentUser!.uid,
       email: email,
       firstname: '',
       lastname: '',
       dateRegistered: date,
-      role: 'user',
+      role: 'user', // Default role
       things: 0,
       profileImageUrl: '',
     );
-    return _updateUser(newUser);
+
+    // Save user data to Firestore under the "profile" field
+    await _updateUser(newUser);
   }
 
   Future<void> updateFullname(String firstname, String lastname) async {
-    final newUser = await future.then(
-        (user) => user.copyWith(firstname: firstname, lastname: lastname));
+    final currentUser = await future; // Access the current user data
+    final newUser = currentUser.copyWith(
+      firstname: firstname,
+      lastname: lastname,
+    );
+
+    // Update the display name in Firebase Authentication
     await FirebaseAuth.instance.currentUser?.updateDisplayName(firstname);
-    return _updateUser(newUser);
+
+    // Update the user data in Firestore
+    await _updateUser(newUser);
   }
 
   Future<void> incrementDevice() async {
-    final newUser = await future.then(
-        (user) => user.copyWith(things: user.things + 1));
-    return _updateUser(newUser);
+    final currentUser = await future; // Access the current user data
+    final newUser = currentUser.copyWith(things: currentUser.things + 1);
+
+    // Update the user data in Firestore
+    await _updateUser(newUser);
   }
 
-  Future<void> _updateUser(PigpenUser newUser) {
+  Future<void> _updateUser(PigpenUser newUser) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) throw Exception('UID is null');
-    return FirebaseFirestore.instance
+    if (uid == null) throw Exception('User is not logged in');
+
+    await FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
-        .set(newUser.toJson(), SetOptions(merge: true))
-        .timeout(const Duration(seconds: 5));
+        .set({
+          'profile': newUser.toJson(), // Save user data under the "profile" field
+        }, SetOptions(merge: true)); // Merge to avoid overwriting other fields
   }
 
   Future<void> deleteUser(String userId) async {

@@ -23,7 +23,7 @@ final showPasswordSignupProvider =
 );
 
 typedef _$ShowPasswordSignup = AutoDisposeNotifier<bool>;
-String _$registrationHash() => r'b4b28c2175ef5a4408559ba3efc1f5834aff1b34';
+String _$registrationHash() => r'bc739cabd8cf53cd58bf08fd2f5225088f270ecd';
 
 /// See also [Registration].
 @ProviderFor(Registration)

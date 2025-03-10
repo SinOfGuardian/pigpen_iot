@@ -6,7 +6,7 @@ part of 'user_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pigpenUserStreamHash() => r'4caaf646d1a6bcae88f7eb01d4f58c5346d60d19';
+String _$pigpenUserStreamHash() => r'1edb9fbc0c670d695c6802d0d82bda826a71401e';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -158,7 +158,7 @@ class _PigpenUserStreamProviderElement
   String get uid => (origin as _PigpenUserStreamProvider).uid;
 }
 
-String _$activeUserHash() => r'd9e3904c905e5490e528e6ed28b0cefada8ee02f';
+String _$activeUserHash() => r'84d2d96486eaa5a73267eb0534cba285c5dc8171';
 
 /// See also [ActiveUser].
 @ProviderFor(ActiveUser)
