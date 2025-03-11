@@ -138,7 +138,7 @@ Future<String?> fetchUserRole() async {
 
     // Check if the document exists and has a 'role' field
     if (doc.exists) {
-      final data = doc.data() as Map<String, dynamic>?;
+      final data = doc.data();
       return data?['role'] as String?; // Return the role if it exists
     }
   }

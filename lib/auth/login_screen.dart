@@ -1,4 +1,5 @@
 import 'package:entry/entry.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,13 +8,111 @@ import 'package:ionicons/ionicons.dart';
 import 'package:pigpen_iot/auth/forgetpassword/forgot_view.dart';
 import 'package:pigpen_iot/auth/login_viewmodel.dart';
 import 'package:pigpen_iot/custom/app_button.dart';
+import 'package:pigpen_iot/custom/app_loader.dart';
 import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/custom/app_textfield.dart';
 import 'package:pigpen_iot/custom/hyperlink_text.dart';
+import 'package:pigpen_iot/extensions/app_snackbar.dart';
+import 'package:pigpen_iot/models/auth_model.dart';
+import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
 
 class LoginScreen extends ConsumerWidget with InternetConnection {
   const LoginScreen({super.key});
+
+  void loginOnPressed(BuildContext context, WidgetRef ref) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!ref.read(loginFieldsProvider.notifier).validateFields()) return;
+
+    showLoader(
+      context,
+      process: isConnected(true, context).then((isConnected) {
+        if (!isConnected) return null;
+        return ref.read(loginProvider.notifier).loginUser().catchError((error) {
+          if (!context.mounted) return null;
+          onError(error as FirebaseException, context, ref);
+          return null;
+        });
+      }),
+    ).then((user) async {
+      if (user == null || user.isAnonymous) return;
+
+      final role = await ref.read(loginProvider.notifier).fetchUserRole(user);
+      if (context.mounted) {
+        if (role == 'admin') {
+          context.go('/admin-dashboard');
+        } else {
+          context.go('/home');
+        }
+      }
+      ref.read(loginProvider.notifier).clear();
+    });
+  }
+
+  void GoogleOnPressed(BuildContext context, WidgetRef ref) {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    showLoader(
+      context,
+      process: isConnected(true, context).then((isConnected) {
+        if (!isConnected) return null;
+
+        // Attempt to sign in with Google
+        return ref
+            .read(loginProvider.notifier)
+            .loginWithGoogle()
+            .catchError((error) {
+          if (!context.mounted) return null;
+
+          onError(error as FirebaseException, context, ref);
+          return null;
+        });
+      }),
+    ).then((userCredential) async {
+      if (userCredential is UserCredential) {
+        // Get the signed-in user
+        final user = userCredential.user;
+
+        if (user != null) {
+          // Fetch user role from Firebase Realtime Database
+          final role =
+              await ref.read(loginProvider.notifier).fetchUserRole(user);
+
+          if (context.mounted) {
+            if (role == 'admin') {
+              context.go('/admin-dashboard');
+            } else if (role == 'user') {
+              context.go('/home');
+            } else {
+              context.go('/get-to-know');
+            }
+          }
+        }
+        ref.read(loginProvider.notifier).clear();
+      }
+    });
+  }
+
+  void onError(
+      FirebaseException exception, BuildContext context, WidgetRef ref) {
+    final code = exception.code;
+    final message = code.trim().replaceAll('-', ' ').toCapitalizeFirst();
+    AuthFieldsMessage newState = const AuthFieldsMessage();
+    if (code == 'invalid-email' ||
+        code == 'user-not-found' ||
+        code == 'user-disabled') {
+      newState = newState.copyWith(emailMessage: message);
+    } else if (code == 'wrong-password') {
+      newState = newState.copyWith(
+          passwordMessage: message, passwordMessage2: message);
+    } else if (code == 'network-request-failed') {
+      context.showSnackBar(kNoInternet, theme: SnackbarTheme.error);
+    } else {
+      context.showSnackBar('$code $message', theme: SnackbarTheme.error);
+      debugPrint('$code $message');
+    }
+    ref.read(loginFieldsProvider.notifier).updateState(newState);
+  }
 
   Widget _graphic(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
@@ -111,7 +210,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
         icon: EvaIcons.logInOutline,
         width: double.infinity,
         margin: const EdgeInsets.only(top: 2),
-        onPressed: () {}, //loginOnPressed(context, ref),
+        onPressed: () => loginOnPressed(context, ref),
       ),
     );
   }
@@ -161,7 +260,7 @@ class LoginScreen extends ConsumerWidget with InternetConnection {
       child: SizedBox(
         width: double.infinity, // Full screen width
         child: OutlinedButton.icon(
-          onPressed: () {}, //GoogleOnPressed(context, ref),
+          onPressed: () => GoogleOnPressed(context, ref),
           //add async code here
           //     async {
           //   // Create an instance of AuthService

@@ -22,7 +22,7 @@ final showPasswordLoginProvider =
 );
 
 typedef _$ShowPasswordLogin = AutoDisposeNotifier<bool>;
-String _$loginHash() => r'e74215ba1a886f26e6ad9ddcd4612fef8272c284';
+String _$loginHash() => r'0b481ca973f3081bea4ba61e6bff0bbcdf95240a';
 
 /// See also [Login].
 @ProviderFor(Login)
@@ -36,7 +36,7 @@ final loginProvider = NotifierProvider<Login, AuthUser>.internal(
 );
 
 typedef _$Login = Notifier<AuthUser>;
-String _$loginFieldsHash() => r'5b53183fc3a719d69d6c8a75f11322fd272af6cc';
+String _$loginFieldsHash() => r'a1b1267136f52775fbae35dd167c87d3cff81026';
 
 /// See also [LoginFields].
 @ProviderFor(LoginFields)
