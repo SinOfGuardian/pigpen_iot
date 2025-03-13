@@ -53,6 +53,8 @@ dependencies:
   eva_icons_flutter: ^3.1.0
   shared_preferences: ^2.5.2
   google_sign_in: ^6.2.2
+  google_nav_bar: ^5.0.7
+  font_awesome_flutter: ^10.8.0
 
 dev_dependencies:
   flutter_test:

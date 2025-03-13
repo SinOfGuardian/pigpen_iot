@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pigpen_iot/apps/home_screen.dart';
+import 'package:pigpen_iot/apps/app_view.dart';
 import 'package:pigpen_iot/apps/intro/displayname_page.dart';
 import 'package:pigpen_iot/auth/login_screen.dart';
 import 'package:pigpen_iot/auth/registration/registration_view.dart';
@@ -33,10 +33,8 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      pageBuilder: (_, state) => sharedAxisTransition(
-        state: state,
-        child: const HomeScreen(),
-      ),
+      pageBuilder: (_, state) =>
+          sharedAxisTransition(state: state, child: const AppScreen()),
       onExit: (BuildContext context, _) {
         if (!_isSignedIn()) return true;
         return showExitDialog(
