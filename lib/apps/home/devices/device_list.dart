@@ -15,7 +15,7 @@ class DeviceList extends ConsumerWidget {
 
   void addThingsTapped(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
-    context.push('/app/add-things');
+    context.push('/home/add-device');
   }
 
   Widget _addDeviceButton(BuildContext context) {

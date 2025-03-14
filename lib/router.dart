@@ -6,11 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pigpen_iot/apps/app_view.dart';
+import 'package:pigpen_iot/apps/home/devices/add_device_screen.dart';
+import 'package:pigpen_iot/apps/home/devices/add_devices_viewmodel.dart';
 import 'package:pigpen_iot/apps/intro/displayname_page.dart';
 import 'package:pigpen_iot/auth/login_screen.dart';
 import 'package:pigpen_iot/auth/registration/registration_view.dart';
 import 'package:pigpen_iot/auth/registration/registration_viewmodel.dart';
 import 'package:pigpen_iot/custom/app_transition_animation.dart';
+import 'package:pigpen_iot/provider/newdevice_provider.dart';
 
 import 'package:pigpen_iot/splashscreen.dart';
 
@@ -46,6 +49,43 @@ final GoRouter router = GoRouter(
           return false;
         });
       },
+      routes: [
+        GoRoute(
+          path: 'add-device',
+          pageBuilder: (_, state) {
+            return sharedAxisTransition(
+              state: state,
+              transitionType: TransitionType.horizontal,
+              child: const AddDeviceScreen(),
+            );
+          },
+          onExit: (BuildContext context, _) {
+            final ref = ProviderScope.containerOf(context);
+            if (ref.read(pageDataProvider).isLoading) return false;
+            final newDevice = ref.read(newDeviceDataProvider);
+            if (newDevice.deviceId.isEmpty &&
+                newDevice.deviceName.isEmpty &&
+                newDevice.graphicName.isEmpty) {
+              return true;
+            }
+            return showExitDialog(
+              context,
+              title: 'Unsave',
+              message: 'Discard adding a device?',
+              cancelLabel: 'Continue',
+              confirmLabel: 'Discard',
+            ).then((result) {
+              if (result != null && result) return true;
+              return false;
+            });
+          },
+        ),
+     
+        
+      
+       
+       
+      ],
     ),
     GoRoute(
       path: '/login',
