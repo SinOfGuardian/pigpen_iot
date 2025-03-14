@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 import 'package:pigpen_iot/custom/ui_appbar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -11,7 +12,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with AutomaticKeepAliveClientMixin {
   final List<Widget> children = [
-    // const CarouselSection(),
+    const DeviceList(),
     // const ThingsSection(),
     // const TipsAndGuidsSection(),
   ];
@@ -35,9 +36,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             child: const SingleChildScrollView(
               child: Column(
                 children: [
-              
-                   SizedBox(height: 10),
-                  
+                  DeviceList(),
+                  // SizedBox(height: 10),
+                  // DeviceList(),
                 ],
               ),
             ),
