@@ -69,7 +69,7 @@ class DeviceList extends ConsumerWidget {
 
   Widget _searchBar(WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 10),
       child: AppTextField(
         controller: ref.watch(_searchController),
         errorText: null,
@@ -100,12 +100,30 @@ class DeviceList extends ConsumerWidget {
           const SectionTitle('Devices'),
           _addDeviceButton(context),
           _searchBar(ref), // Add the search bar
-          const SizedBox(height: 20),
+
           streamUserDevices.when(
             data: (userDevices) {
               final availableDevices =
                   ref.watch(_availableDevices(userDevices));
               int animationDelay = 0;
+              // Check if there are no devices
+              if (availableDevices.isEmpty) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      'There are no devices.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.6),
+                          ),
+                    ),
+                  ),
+                );
+              }
+
               return Column(
                 children: [
                   const SizedBox(height: 20),

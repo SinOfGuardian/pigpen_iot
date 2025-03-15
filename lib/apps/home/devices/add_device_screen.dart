@@ -15,6 +15,7 @@ import 'package:pigpen_iot/custom/app_text.dart';
 
 import 'package:pigpen_iot/custom/app_textfield.dart';
 import 'package:pigpen_iot/custom/ui_added_device.dart';
+import 'package:pigpen_iot/custom/ui_animal_preview.dart';
 import 'package:pigpen_iot/custom/ui_appbar.dart';
 import 'package:pigpen_iot/models/animal_model.dart';
 import 'package:pigpen_iot/models/device_model.dart';
@@ -130,31 +131,13 @@ class AddDeviceScreen extends ConsumerWidget with InternetConnection {
   }
 }
 
-// class _PreviewSection extends ConsumerWidget {
-//   const _PreviewSection();
-
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     final newDevice = ref.watch(newDeviceDataProvider);
-//     return PlantPreview(device: UserDevice.fromNewDevice(newDevice));
-//   }
-// }
-
 class _PreviewSection extends ConsumerWidget {
   const _PreviewSection();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Center(
-        child: Text('Preview Section'),
-      ),
-    );
+    final newDevice = ref.watch(newDeviceDataProvider);
+    return AnimalPreview(device: UserDevice.fromNewDevice(newDevice));
   }
 }
 
@@ -225,7 +208,7 @@ class _FormSection extends ConsumerWidget {
           controller: ref.watch(deviceIdControllerProvider),
           errorText: ref.watch(deviceIdErrorProvider),
           labelText: 'Scan QR Code to get device ID',
-          readOnly: true,
+          //readOnly: true,
           textInputAction: TextInputAction.next,
           keyboardType: TextInputType.text,
           suffixIconData: Ionicons.barcode_outline,
