@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
-import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 import 'package:pigpen_iot/modules/exceptions.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pigpen_iot/models/userdevice_model.dart';
@@ -9,11 +8,10 @@ import 'package:pigpen_iot/models/userdevice_model.dart';
 part 'userdevices_provider.g.dart';
 
 @riverpod
-
-
 Stream<List<UserDevice>> userDevicesStream(
     // ignore: deprecated_member_use_from_same_package
-    UserDevicesStreamRef ref, String uid) {
+    UserDevicesStreamRef ref,
+    String uid) {
   final path = 'userdata/user_devices/$uid/';
   return FirebaseDatabase.instance.ref(path).onValue.map((event) {
     final json = event.snapshot.value as Map<Object?, Object?>?;

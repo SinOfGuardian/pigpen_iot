@@ -14,7 +14,7 @@ class Animal {
 
   factory Animal.fromJson(Map<Object?, Object?> json) {
     return Animal(
-      name: json['animal name'] as String? ?? 'Unknown',
+      name: json['animal name'] as String? ?? '',
       graphicUrl: json['url'] as String? ?? '',
       description: json['description'] as String? ?? '',
     );
