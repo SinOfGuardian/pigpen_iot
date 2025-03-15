@@ -156,7 +156,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           )
         : Text(
-            'Hi, ' + firstname.toTitleCase(),
+            'Hi, ${firstname.toTitleCase()}',
             style: textTheme.bodyLarge?.copyWith(),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

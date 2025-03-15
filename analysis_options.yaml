@@ -12,6 +12,7 @@ analyzer:
     use_build_context_synchronously: ignore
     depend_on_referenced_packages: ignore
     unnecessary_const: ignore
+    deprecated_member_use_from_same_package: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:

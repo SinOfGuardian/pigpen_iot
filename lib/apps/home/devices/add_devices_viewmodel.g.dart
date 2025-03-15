@@ -6,15 +6,15 @@ part of 'add_devices_viewmodel.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pageDataHash() => r'2511b331c7ee040f1950da8289a5876fcc17458b';
+String _$pageDataHash() => r'5c3497356340b2ac2b2f2666883747d97e6e3bd6';
 
 /// See also [PageData].
 @ProviderFor(PageData)
 final pageDataProvider = AutoDisposeAsyncNotifierProvider<
     PageData,
     ({
-      List<dynamic> devices,
-      List<dynamic> plants,
+      List<Animal> animals,
+      List<Device> devices,
       List<UserDevice> userDevices
     })>.internal(
   PageData.new,
@@ -27,8 +27,8 @@ final pageDataProvider = AutoDisposeAsyncNotifierProvider<
 
 typedef _$PageData = AutoDisposeAsyncNotifier<
     ({
-      List<dynamic> devices,
-      List<dynamic> plants,
+      List<Animal> animals,
+      List<Device> devices,
       List<UserDevice> userDevices
     })>;
 String _$deviceIdErrorHash() => r'1b4e886c4281b7146193af3f1c15b6d8b28dd2bf';

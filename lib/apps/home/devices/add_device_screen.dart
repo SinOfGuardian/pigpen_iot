@@ -5,44 +5,69 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ionicons/ionicons.dart';
 import 'package:pigpen_iot/apps/home/devices/add_devices_viewmodel.dart';
+import 'package:pigpen_iot/custom/app_animal_picker_dialog.dart';
 
 import 'package:pigpen_iot/custom/app_button.dart';
+import 'package:pigpen_iot/custom/app_circularprogressindicator.dart';
+import 'package:pigpen_iot/custom/app_error_handling.dart';
+import 'package:pigpen_iot/custom/app_loader.dart';
+import 'package:pigpen_iot/custom/app_text.dart';
 
 import 'package:pigpen_iot/custom/app_textfield.dart';
-import 'package:pigpen_iot/custom/ui_appbar%20copy.dart';
+import 'package:pigpen_iot/custom/ui_added_device.dart';
+import 'package:pigpen_iot/custom/ui_appbar.dart';
+import 'package:pigpen_iot/models/animal_model.dart';
+import 'package:pigpen_iot/models/device_model.dart';
+import 'package:pigpen_iot/models/userdevice_model.dart';
 import 'package:pigpen_iot/provider/newdevice_provider.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
 
 class AddDeviceScreen extends ConsumerWidget with InternetConnection {
   const AddDeviceScreen({super.key});
 
-  // void addDeviceOnPressed(
-  //   BuildContext context,
-  //   WidgetRef ref, {
-  //   required List<Device> devices,
-  //   required List<UserDevice> userDevices,
-  // }) {
-  //   final check = ref.read(pageDataProvider.notifier);
-  //   if (!check.isFieldsNotEmpty()) return;
-  //   if (!check.isDeviceDeployed(devices: devices)) return;
-  //   if (!check.isDeviceNotDuplicate(userDevices: userDevices)) return;
+  void addDeviceOnPressed(
+    BuildContext context,
+    WidgetRef ref, {
+    required List<Device> devices,
+    required List<UserDevice> userDevices,
+  }) async {
+    try {
+      final check = ref.read(pageDataProvider.notifier);
+      if (!check.isFieldsNotEmpty()) return;
+      if (!check.isDeviceDeployed(devices: devices)) return;
+      if (!check.isDeviceNotDuplicate(userDevices: userDevices)) return;
 
-  //   showLoader(
-  //     context,
-  //     process: isConnected(true, context),
-  //   ).then((isConnected) {
-  //     if (isConnected == null || !isConnected) return;
-  //     final newDevice = ref.read(newDeviceDataProvider);
-  //     check.submitDeviceToDatabase(newDevice).then((_) {
-  //       if (!context.mounted) return;
-  //       showAddedDeviceDialog(
-  //         context,
-  //         graphicUrl: newDevice.graphicUrl,
-  //         deviceId: newDevice.deviceId,
-  //       ).then((_) => {if (context.mounted) context.pop()});
-  //     });
-  //   });
-  // }
+      final connectionStatus = await showLoader(
+        context,
+        process: isConnected(true, context),
+      );
+
+      if (connectionStatus == null || !connectionStatus) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No internet connection')),
+        );
+        return;
+      }
+
+      final newDevice = ref.read(newDeviceDataProvider);
+      await check.submitDeviceToDatabase(newDevice);
+
+      if (!context.mounted) return;
+      await showAddedDeviceDialog(
+        context,
+        graphicUrl: newDevice.graphicUrl,
+        deviceId: newDevice.deviceId,
+      );
+
+      if (context.mounted) context.pop();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to add device: $e')),
+        );
+      }
+    }
+  }
 
   Widget _addDeviceButton(void Function()? onPressed) {
     return AppFilledButton.big(
@@ -56,7 +81,7 @@ class AddDeviceScreen extends ConsumerWidget with InternetConnection {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final pageData = ref.watch(pageDataProvider);
+    final pageData = ref.watch(pageDataProvider);
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -68,37 +93,42 @@ class AddDeviceScreen extends ConsumerWidget with InternetConnection {
         trailingIcon: EvaIcons.questionMark,
         trailingAction: () {},
       ),
-      // body: pageData.when(
-      //   data: (pageDataValue) {
-      // void onPressed() => null(); //addDeviceOnPressed(context, ref,
-      // devices: pageDataValue.devices,
-      // userDevices: pageDataValue.userDevices);
+      body: pageData.when(
+        data: (pageDataValue) {
+          void onPressed() => //();
+              addDeviceOnPressed(context, ref,
+                  devices: pageDataValue.devices,
+                  userDevices: pageDataValue.userDevices);
 
-      //         return SafeArea(
-      //           child: SingleChildScrollView(
-      //             child: Padding(
-      //               padding: const EdgeInsets.symmetric(horizontal: 20),
-      //               child: Column(
-      //                 children: [
-      //                   const SectionLabel('Preview',
-      //                       margin: const EdgeInsets.only(bottom: 15)),
-      //                   const _PreviewSection(),
-      //                   const SectionLabel('Device Details',
-      //                       margin: const EdgeInsets.only(top: 10, bottom: 15)),
-      //                   _FormSection(plantGraphics: pageDataValue.plants),
-      //                   _addDeviceButton(onPressed),
-      //                 ],
-      //               ),
-      //             ),
-      //           ),
-      //         );
-      //       },
-      //       loading: () => const AppCircularProgressIndicator(),
-      //       error: (e, st) => AppErrorWidget(e as Exception, st, this),
-      //     ),
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    const SectionLabel('Preview',
+                        margin: const EdgeInsets.only(bottom: 15)),
+                    const _PreviewSection(),
+                    const SectionLabel('Device Details',
+                        margin: const EdgeInsets.only(top: 10, bottom: 15)),
+                    _FormSection(animalGraphics: pageDataValue.animals),
+                    _addDeviceButton(onPressed),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        loading: () => const AppCircularProgressIndicator(),
+        error: (e, st) {
+          debugPrint('Error loading page data: $e');
+          return AppErrorWidget(
+              e is Exception ? e : Exception(e.toString()), st, this);
+        },
+      ),
     );
-    // }
   }
+}
 
 // class _PreviewSection extends ConsumerWidget {
 //   const _PreviewSection();
@@ -109,11 +139,28 @@ class AddDeviceScreen extends ConsumerWidget with InternetConnection {
 //     return PlantPreview(device: UserDevice.fromNewDevice(newDevice));
 //   }
 // }
+
+class _PreviewSection extends ConsumerWidget {
+  const _PreviewSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      height: 150,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const Center(
+        child: Text('Preview Section'),
+      ),
+    );
+  }
 }
 
 class _FormSection extends ConsumerWidget {
-  //const _FormSection({required this.plantGraphics});
-  //final List<Plant> plantGraphics;
+  const _FormSection({required this.animalGraphics});
+  final List<Animal> animalGraphics;
 
   // Future<void> _scanQRCode(WidgetRef ref) async {
   //   try {
@@ -133,6 +180,29 @@ class _FormSection extends ConsumerWidget {
   //     debugPrint('Error scanning QR code: $e');
   //   }
   // }
+  Future<void> chooseGraphicOnTap(
+      BuildContext context, WidgetRef ref, List<Animal> animalGraphics) {
+    return showAnimalChooser(context, availableGraphics: animalGraphics)
+        .then<void>(
+      (Animal? newAnimal) {
+        if (newAnimal == null) return;
+        final prevDevice = ref.read(newDeviceDataProvider);
+        final prevName = prevDevice.deviceName;
+        final prevGraphicName = prevDevice.graphicName;
+
+        if (prevName.isEmpty || prevName == prevGraphicName) {
+          ref.read(nameErrorProvider.notifier).clearError();
+          ref.read(nameControllerProvider.notifier).setText(newAnimal.name);
+          ref.read(newDeviceDataProvider.notifier).setName(newAnimal.name);
+        }
+        ref.read(graphicNameErrorProvider.notifier).clearError();
+        ref
+            .read(graphicNameControllerProvider.notifier)
+            .setText(newAnimal.name);
+        ref.read(newDeviceDataProvider.notifier).setSelectedAnimal(newAnimal);
+      },
+    );
+  }
 
   Widget _titleLabel(String title, BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -156,8 +226,8 @@ class _FormSection extends ConsumerWidget {
           errorText: ref.watch(deviceIdErrorProvider),
           labelText: 'Scan QR Code to get device ID',
           readOnly: true,
-          textInputAction: TextInputAction.none,
-          keyboardType: TextInputType.none,
+          textInputAction: TextInputAction.next,
+          keyboardType: TextInputType.text,
           suffixIconData: Ionicons.barcode_outline,
           floatingLabelBehavior: FloatingLabelBehavior.never,
           onChanged: (newId) {
@@ -170,7 +240,7 @@ class _FormSection extends ConsumerWidget {
         AppTextField(
             controller: ref.watch(nameControllerProvider),
             errorText: ref.watch(nameErrorProvider),
-            labelText: 'Name of the plant',
+            labelText: 'Name of the animal',
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.text,
             suffixIconData: Ionicons.close_outline,
@@ -183,7 +253,7 @@ class _FormSection extends ConsumerWidget {
               ref.read(nameControllerProvider.notifier).clear();
               ref.read(newDeviceDataProvider.notifier).setName('');
             }),
-        _titleLabel('Plant*', context),
+        _titleLabel('Animal*', context),
         AppTextField(
           controller: ref.watch(graphicNameControllerProvider),
           errorText: ref.watch(graphicNameErrorProvider),
@@ -194,11 +264,10 @@ class _FormSection extends ConsumerWidget {
           suffixIconData: Ionicons.chevron_down_outline,
           floatingLabelBehavior: FloatingLabelBehavior.never,
           onChanged: (_) =>
-              null, //chooseGraphicOnTap(context, ref, plantGraphics),
-          onTapped: () =>
-              null, //chooseGraphicOnTap(context, ref, plantGraphics),
-          onSuffixIconTapped: () => null,
-          //     chooseGraphicOnTap(context, ref, plantGraphics),
+              ref.read(graphicNameErrorProvider.notifier).clearError(),
+          onTapped: () => chooseGraphicOnTap(context, ref, animalGraphics),
+          onSuffixIconTapped: () =>
+              chooseGraphicOnTap(context, ref, animalGraphics),
         ),
       ],
     );

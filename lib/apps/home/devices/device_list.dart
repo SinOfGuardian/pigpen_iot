@@ -1,19 +1,38 @@
+import 'package:entry/entry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:pigpen_iot/custom/app_container.dart';
+import 'package:pigpen_iot/custom/app_error_handling.dart';
 import 'package:pigpen_iot/custom/app_icon.dart';
 import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/custom/app_textfield.dart';
+import 'package:pigpen_iot/custom/ui_animal_preview.dart';
+import 'package:pigpen_iot/models/userdevice_model.dart';
+import 'package:pigpen_iot/provider/userdevices_provider.dart';
 
 // Provider for search query
-final _searchQueryProvider = StateProvider.autoDispose<String?>((ref) => null);
+final _searchQuery = StateProvider.autoDispose<String?>((ref) => null);
+final _searchController = Provider.autoDispose<TextEditingController>(
+    (ref) => TextEditingController());
+final _availableDevices = Provider.autoDispose
+    .family<List<UserDevice>, List<UserDevice>>((ref, availableDevices) {
+  final query = ref.watch(_searchQuery);
+  if (query == null || query.isEmpty) return availableDevices;
+  return availableDevices.where((device) {
+    if (device.deviceId.toLowerCase().contains(query.toLowerCase()) ||
+        device.deviceName.toLowerCase().contains(query.toLowerCase()))
+      return true;
+    else
+      return false;
+  }).toList();
+});
 
 class DeviceList extends ConsumerWidget {
   const DeviceList({super.key});
 
-  void addThingsTapped(BuildContext context) {
+  void addDeviceTapped(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
     context.push('/home/add-device');
   }
@@ -34,7 +53,7 @@ class DeviceList extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => addThingsTapped(context),
+          onTap: () => addDeviceTapped(context),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -52,19 +71,19 @@ class DeviceList extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
       child: AppTextField(
-        controller:
-            TextEditingController(), // You can use a provider for this if needed
+        controller: ref.watch(_searchController),
         errorText: null,
         labelText: 'Search Device',
         textInputAction: TextInputAction.search,
         prefixIconData: Icons.search_rounded,
         suffixIconData: Icons.close_outlined,
         floatingLabelBehavior: FloatingLabelBehavior.never,
-        onChanged: (newQuery) {
-          ref.read(_searchQueryProvider.notifier).state = newQuery;
+        onChanged: (newId) {
+          ref.read(_searchQuery.notifier).state = newId;
         },
         onSuffixIconTapped: () {
-          ref.read(_searchQueryProvider.notifier).state = null;
+          ref.read(_searchQuery.notifier).state = null;
+          ref.read(_searchController).clear();
         },
       ),
     );
@@ -72,27 +91,7 @@ class DeviceList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchQuery = ref.watch(_searchQueryProvider);
-
-    // Example list of devices (replace with your actual data source)
-    final List<UserDevice> devices = [
-      UserDevice(deviceId: '1', deviceName: 'Device A'),
-      UserDevice(deviceId: '2', deviceName: 'Device B'),
-      UserDevice(deviceId: '3', deviceName: 'Device C'),
-    ];
-
-    // Filter devices based on search query
-    final filteredDevices = searchQuery == null || searchQuery.isEmpty
-        ? devices
-        : devices.where((device) {
-            return device.deviceName
-                    .toLowerCase()
-                    .contains(searchQuery.toLowerCase()) ||
-                device.deviceId
-                    .toLowerCase()
-                    .contains(searchQuery.toLowerCase());
-          }).toList();
-
+    final streamUserDevices = ref.watch(userDevicesProvider);
     return AppContainer(
       margin: null,
       padding: const EdgeInsets.symmetric(vertical: 0),
@@ -102,33 +101,37 @@ class DeviceList extends ConsumerWidget {
           _addDeviceButton(context),
           _searchBar(ref), // Add the search bar
           const SizedBox(height: 20),
-          if (filteredDevices.isEmpty)
-            const Center(
-              child: Text('No devices found.'),
-            )
-          else
-            Column(
-              children: [
-                for (final device in filteredDevices)
-                  ListTile(
-                    title: Text(device.deviceName),
-                    subtitle: Text(device.deviceId),
-                    onTap: () {
-                      // Handle device tap (e.g., navigate to device details)
-                    },
-                  ),
-              ],
+          streamUserDevices.when(
+            data: (userDevices) {
+              final availableDevices =
+                  ref.watch(_availableDevices(userDevices));
+              int animationDelay = 0;
+              return Column(
+                children: [
+                  const SizedBox(height: 20),
+                  for (final userDevice in availableDevices) ...[
+                    Entry.all(
+                      delay: Duration(milliseconds: animationDelay += 150),
+                      child: AnimalPreview(
+                        device: userDevice,
+                        onTap: () =>
+                            null, //plantOnTapped(ref, context, userDevice),
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+            loading: () => Container(
+              padding: const EdgeInsets.only(top: 20),
+              constraints: const BoxConstraints(maxHeight: 160),
+              alignment: Alignment.topCenter,
+              child: AnimalPreview(device: UserDevice.empty()),
             ),
+            error: (e, st) => AppErrorWidget(e as Exception, st, this),
+          ),
         ],
       ),
     );
   }
-}
-
-// Example UserDevice model (replace with your actual model)
-class UserDevice {
-  final String deviceId;
-  final String deviceName;
-
-  UserDevice({required this.deviceId, required this.deviceName});
 }

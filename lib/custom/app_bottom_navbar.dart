@@ -47,12 +47,12 @@ class BottomGNavBar extends StatelessWidget {
         .titleSmall
         ?.copyWith(color: colorScheme.primary);
 
-    const admin_Padding = EdgeInsets.symmetric(vertical: 5, horizontal: 15);
-    const user_Padding =
+    const adminPadding = EdgeInsets.symmetric(vertical: 5, horizontal: 15);
+    const userPadding =
         EdgeInsets.symmetric(vertical: 5, horizontal: 30); // horizontal: 50
 
     return Container(
-      padding: role == 'admin' ? admin_Padding : user_Padding,
+      padding: role == 'admin' ? adminPadding : userPadding,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         // border: Border(top: BorderSide(color: colorScheme.surfaceContainer, width: 1)),
@@ -90,7 +90,7 @@ class PlantNavBar extends StatelessWidget {
     // final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
 
     final Color iconColor = colorScheme.outline;
-    final Color? selectedColor = colorScheme.primary;
+    final Color selectedColor = colorScheme.primary;
 
     return [
       NavigationDestination(
