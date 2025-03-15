@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pigpen_iot/apps/app_view.dart';
 import 'package:pigpen_iot/apps/home/devices/add_device_screen.dart';
 import 'package:pigpen_iot/apps/home/devices/add_devices_viewmodel.dart';
+import 'package:pigpen_iot/apps/home/userdevices/schedules/viewall_schedule_view.dart';
+import 'package:pigpen_iot/apps/home/userdevices/userdevice_page_view.dart';
 import 'package:pigpen_iot/apps/intro/displayname_page.dart';
 import 'package:pigpen_iot/auth/login_screen.dart';
 import 'package:pigpen_iot/auth/registration/registration_view.dart';
@@ -80,11 +82,25 @@ final GoRouter router = GoRouter(
             });
           },
         ),
-     
-        
-      
        
-       
+        GoRoute(
+          path: 'user-device',
+          pageBuilder: (_, state) => sharedAxisTransition(
+              state: state, child: const UserDevicePageView()),
+          routes: [
+            GoRoute(
+              path: 'scheduled-watering',
+              pageBuilder: (_, state) {
+                return sharedAxisTransition(
+                  state: state,
+                  transitionType: TransitionType.horizontal,
+                  child: ScheduledWateringPage(
+                      schedulesList: state.extra! as Widget),
+                );
+              },
+            ),
+          ],
+        ),
       ],
     ),
     GoRoute(

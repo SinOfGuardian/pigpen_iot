@@ -29,12 +29,25 @@ final _availableDevices = Provider.autoDispose
   }).toList();
 });
 
+final activeDeviceProvider = StateProvider<UserDevice?>((ref) => null);
+
 class DeviceList extends ConsumerWidget {
   const DeviceList({super.key});
 
   void addDeviceTapped(BuildContext context) {
     FocusManager.instance.primaryFocus?.unfocus();
     context.push('/home/add-device');
+  }
+
+  void animalOnTapped(WidgetRef ref, BuildContext context, UserDevice thing) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    ref.read(activeDeviceProvider.notifier).state = thing;
+    debugPrint('Navigating to /home/user-device');
+    context.push('/home/user-device').then((_) {
+      debugPrint('Navigation complete');
+    }).catchError((error) {
+      debugPrint('Navigation error: $error');
+    });
   }
 
   Widget _addDeviceButton(BuildContext context) {
@@ -132,8 +145,7 @@ class DeviceList extends ConsumerWidget {
                       delay: Duration(milliseconds: animationDelay += 150),
                       child: AnimalPreview(
                         device: userDevice,
-                        onTap: () =>
-                            null, //plantOnTapped(ref, context, userDevice),
+                        onTap: () => animalOnTapped(ref, context, userDevice),
                       ),
                     ),
                   ],

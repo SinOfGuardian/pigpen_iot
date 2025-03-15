@@ -75,11 +75,11 @@ class BottomGNavBar extends StatelessWidget {
   }
 }
 
-class PlantNavBar extends StatelessWidget {
+class AnimalNavBar extends StatelessWidget {
   final int currentIndex;
   final PageController controller;
   final String role;
-  const PlantNavBar(
+  const AnimalNavBar(
       {super.key,
       required this.currentIndex,
       required this.controller,
