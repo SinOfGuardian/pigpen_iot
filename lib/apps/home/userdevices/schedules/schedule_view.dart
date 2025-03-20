@@ -88,6 +88,47 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
   final dateInfoMessage = 'Choose date that has not been elapsed';
   final timeInfoMessage = 'Choose time that has not been elapsed';
 
+  // Generate 3 schedules for the selected date and time
+  List<Schedule> generateDailySchedules(DateTime selectedDateTime) {
+    final schedules = <Schedule>[];
+    const interval = Duration(hours: 6); // 6 hours apart
+
+    for (int i = 0; i < 3; i++) {
+      final scheduleTime = selectedDateTime.add(interval * i);
+      schedules.add(
+        Schedule(
+          key: '${deviceId}_${scheduleTime.toIso8601String()}', // Unique key
+          dateTime: scheduleTime,
+        ),
+      );
+    }
+
+    return schedules;
+  }
+
+  // Validate the 3 schedules
+  bool validateSchedules(List<Schedule> schedules) {
+    final now = DateTime.now();
+
+    // Check if any schedule is in the past
+    for (final schedule in schedules) {
+      if (schedule.dateTime.isBefore(now)) {
+        return false; // Schedule is in the past
+      }
+    }
+
+    // Check if schedules are at least 1 hour apart
+    for (int i = 1; i < schedules.length; i++) {
+      final previousTime = schedules[i - 1].dateTime;
+      final currentTime = schedules[i].dateTime;
+      if (currentTime.difference(previousTime) < Duration(hours: 1)) {
+        return false; // Schedules are too close
+      }
+    }
+
+    return true;
+  }
+
   bool isFieldsNotEmpty() {
     final date = ref.read(dateController.notifier);
     final time = ref.read(timeController.notifier);
@@ -179,8 +220,22 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
   Future<bool> submitSchedule() async {
     final database = ScheduleOperations();
     final dateTimePicked = ref.read(dateTimeProvider.notifier).state;
-    await database.uploadSchedule(deviceId, dateTimePicked);
-    return Future.value(true);
+    // Generate 3 schedules
+    final schedules = generateDailySchedules(dateTimePicked);
+
+    // Validate the schedules
+    if (!validateSchedules(schedules)) {
+      return false;
+    }
+
+    // Save all schedules
+    for (final schedule in schedules) {
+      await database.uploadSchedule(deviceId, schedule.dateTime);
+    }
+
+    return true;
+    // await database.uploadSchedule(deviceId, dateTimePicked);
+    // return Future.value(true);
   }
 
   void resetProviders() {
