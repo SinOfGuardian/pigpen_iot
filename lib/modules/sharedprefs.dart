@@ -8,11 +8,13 @@ class SharedPrefs {
   const SharedPrefs();
 
   static late SharedPreferences prefs;
-  static Future<void> init() async => prefs = await SharedPreferences.getInstance();
+  static Future<void> init() async =>
+      prefs = await SharedPreferences.getInstance();
   static void clearPrefs() => prefs.clear();
 
   // Write
-  Future<bool> writeString(String key, String value) => prefs.setString(key, value);
+  Future<bool> writeString(String key, String value) =>
+      prefs.setString(key, value);
   Future<bool> writeBool(String key, bool value) => prefs.setBool(key, value);
   Future<bool> writeInt(String key, int value) => prefs.setInt(key, value);
   Future<bool> writeStringList(String key, List<String> list) =>

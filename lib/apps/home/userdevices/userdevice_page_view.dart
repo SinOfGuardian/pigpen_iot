@@ -1,10 +1,14 @@
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/apps/home/userdevices/dashboard/dashboard_screen.dart';
+import 'package:pigpen_iot/apps/home/userdevices/logs/log_screen.dart';
+
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_screen.dart';
+import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_view.dart';
 import 'package:pigpen_iot/custom/app_bottom_navbar.dart';
 import 'package:pigpen_iot/custom/ui_appbar.dart';
 import 'package:pigpen_iot/provider/user_provider.dart';
-
 
 class UserDevicePageView extends ConsumerStatefulWidget {
   const UserDevicePageView({super.key});
@@ -17,10 +21,10 @@ class _UserDevicePageViewState extends ConsumerState<UserDevicePageView> {
   int _pageIndex = 0;
 
   final List<Widget> pages = [
-    // const DashBoardPage(),
-    // const MonitoringPage(),
-    // const SchedulerPage(),
-    // const LogsPage(),
+    const DashboardScreen(),
+    const MonitoringScreen(),
+    const SchedulerPage(),
+    const LogsScreen(),
     // FinalPage(),
   ];
 
@@ -28,7 +32,7 @@ class _UserDevicePageViewState extends ConsumerState<UserDevicePageView> {
   Widget build(BuildContext context) {
     final role = ref.watch(activeUserProvider).asData?.value.role;
     final colorScheme = Theme.of(context).colorScheme;
-    debugPrint('plant page build');
+    debugPrint('Animal page build');
     return Scaffold(
       backgroundColor: _pageIndex == 0 ? colorScheme.secondaryContainer : null,
       extendBody: true,
