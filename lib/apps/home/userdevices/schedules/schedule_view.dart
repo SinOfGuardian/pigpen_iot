@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 import 'package:pigpen_iot/apps/home/userdevices/logs/logs_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_model.dart';
@@ -29,6 +30,7 @@ import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/modules/widgetview.dart';
 import 'package:pigpen_iot/router.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
+import 'package:pigpen_iot/services/notification_service.dart';
 
 const _pageTitle = 'Schedule';
 const _pageDescription =
@@ -231,6 +233,15 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     // Save all schedules
     for (final schedule in schedules) {
       await database.uploadSchedule(deviceId, schedule.dateTime);
+      // Schedule a notification 10 minutes before each wash time
+      final notificationTime = schedule.dateTime.subtract(const Duration(minutes: 10));
+      await NotificationService().scheduleNotification(
+        id: schedule.dateTime.millisecondsSinceEpoch ~/ 1000, // Unique ID
+        title: 'Pig Wash Reminder',
+        body: 'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(schedule.dateTime)}',
+        scheduledTime: notificationTime,
+      );
+
     }
 
     return true;

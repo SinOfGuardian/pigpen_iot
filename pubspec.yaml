@@ -33,14 +33,20 @@ dependencies:
   go_router: ^14.8.1
   flutter_riverpod: ^2.6.1
   riverpod_annotation: ^2.2.0
+
   # SERVICES
   internet_connection_checker: ^1.0.0+1
+  flutter_local_notifications: ^19.0.0
 
   #Firebase
   firebase_core: ^2.15.1
   firebase_auth: ^4.8.0
   cloud_firestore: ^4.17.5
   firebase_database: ^10.5.7
+
+  #Google
+  google_sign_in: ^6.2.2
+  google_nav_bar: ^5.0.7
 
   #3rd Party Widget
   animations: ^2.0.7
@@ -52,12 +58,11 @@ dependencies:
   url_launcher: ^6.3.1
   eva_icons_flutter: ^3.1.0
   shared_preferences: ^2.5.2
-  google_sign_in: ^6.2.2
-  google_nav_bar: ^5.0.7
   font_awesome_flutter: ^10.8.0
   cached_network_image: ^3.4.1
   unicons: ^3.0.0
   blobs: ^2.0.0
+  timezone: ^0.10.0
 
 dev_dependencies:
   flutter_test:

@@ -5,10 +5,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pigpen_iot/modules/sharedprefs.dart';
 import 'package:pigpen_iot/router.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:pigpen_iot/services/notification_service.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await intializations();
+
+  // Initialize time zone database
+  tz.initializeTimeZones();
+
+  // Initialize NotificationService
+  await NotificationService().init();
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -42,12 +51,28 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final router = ref.watch(router);
+    //  Listen to the notification response stream
+    return StreamBuilder<String?>(
+      stream: NotificationService().notificationResponseStream,
+      builder: (context, snapshot) {
+        // Handle notification tap
+        if (snapshot.hasData) {
+          final payload = snapshot.data;
+          debugPrint('Notification tapped with payload: $payload');
 
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'PigPen IoT',
-      routerConfig: router,
+          // Navigate to a specific screen or perform an action
+          // Example: Navigate to the schedules page
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            router.push('/schedules'); // Replace with your desired route
+          });
+        }
+
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'PigPen IoT',
+          routerConfig: router,
+        );
+      },
     );
   }
 }
