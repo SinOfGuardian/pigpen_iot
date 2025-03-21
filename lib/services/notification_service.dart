@@ -1,84 +1,100 @@
-import 'dart:async';
-
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:permission_handler/permission_handler.dart';
 
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal();
+  static final _notifications = FlutterLocalNotificationsPlugin();
 
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  static Future<void> init() async {
+    tz.initializeTimeZones();
 
-  // Stream for notification responses
-  final StreamController<String?> _notificationResponseStreamController =
-      StreamController<String?>.broadcast();
-  Stream<String?> get notificationResponseStream =>
-      _notificationResponseStreamController.stream;
-
-  Future<void> init() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
+    const AndroidInitializationSettings androidInitializationSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
+      android: androidInitializationSettings,
     );
 
-    await flutterLocalNotificationsPlugin.initialize(
+    await _notifications.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap
-        _notificationResponseStreamController.add(response.payload);
+        print('Notification tapped: ${response.payload}');
+        // Handle notification tap (e.g., navigate to a specific screen)
       },
     );
 
-    // Initialize time zone database
-    tz.initializeTimeZones();
+    await createNotificationChannel(); // Create the notification channel
   }
 
-  Future<void> scheduleNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime scheduledTime,
-    String? payload,
-  }) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
+  static Future<void> createNotificationChannel() async {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pig_wash_channel', // Channel ID
       'Pig Wash Reminders', // Channel name
-      importance: Importance.high,
-      priority: Priority.high,
+      importance: Importance.max,
+      description: 'Channel for pig wash reminders',
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-
-    // Convert DateTime to TZDateTime
-    final tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(
-      scheduledTime,
-      tz.local,
-    );
-
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      id,
-      title,
-      body,
-      tzScheduledTime,
-      platformChannelSpecifics,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      // androidAllowWhileIdle: true, // Allow notifications in idle mode
-      // uiLocalNotificationDateInterpretation:
-      //     UILocalNotificationDateInterpretation
-      //         .absoluteTime, // Use absolute time
-      //payload: payload, androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle, // Optional payload
-    );
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()!
+        .createNotificationChannel(channel);
   }
 
-  Future<void> cancelNotification(int id) async {
-    await flutterLocalNotificationsPlugin.cancel(id);
+  static Future<bool> checkAndRequestExactAlarmPermission() async {
+    if (await Permission.scheduleExactAlarm.isGranted) {
+      return true;
+    }
+    final status = await Permission.scheduleExactAlarm.request();
+    return status.isGranted;
+  }
+
+  static Future<void> scheduleNotification({
+    required String deviceId,
+    required String title,
+    required String body,
+    required DateTime scheduledDate,
+    String? payload,
+  }) async {
+    try {
+      final hasPermission = await checkAndRequestExactAlarmPermission();
+      if (!hasPermission) {
+        throw Exception('Exact alarm permission not granted');
+      }
+
+      const AndroidNotificationDetails androidDetails =
+          AndroidNotificationDetails(
+        'pig_wash_channel', // Channel ID
+        'Pig Wash Reminders', // Channel name
+        importance: Importance.max,
+        priority: Priority.high,
+      );
+
+      const NotificationDetails notificationDetails =
+          NotificationDetails(android: androidDetails);
+
+      await _notifications.zonedSchedule(
+        0, // Notification ID
+        title,
+        body,
+        tz.TZDateTime.from(
+            scheduledDate, tz.local), // Convert to local time zone
+        notificationDetails,
+        matchDateTimeComponents: DateTimeComponents.time,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
+      );
+
+      print('Notification scheduled at $scheduledDate');
+    } catch (e) {
+      print('Failed to schedule notification: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> cancelAllNotifications() async {
+    await _notifications.cancelAll();
+    print('All notifications canceled');
   }
 }

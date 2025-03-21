@@ -25,7 +25,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.example.pigpen_iot"
-    compileSdk = 34 // Update to the latest compileSdkVersion
+    compileSdk = 35 // Update to the latest compileSdkVersion
     ndkVersion = "25.1.8937393"
 
     compileOptions {
@@ -40,7 +40,7 @@ android {
     defaultConfig {
         applicationId = "com.example.pigpen_iot"
         minSdk = 23 // Minimum SDK version for notifications
-        targetSdk = 34 // Update to the latest targetSdkVersion
+        targetSdk = 35 // Update to the latest targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
         multiDexEnabled = true // Enable multidex support

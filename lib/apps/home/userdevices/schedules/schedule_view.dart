@@ -123,7 +123,7 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     for (int i = 1; i < schedules.length; i++) {
       final previousTime = schedules[i - 1].dateTime;
       final currentTime = schedules[i].dateTime;
-      if (currentTime.difference(previousTime) < Duration(hours: 1)) {
+      if (currentTime.difference(previousTime) < const Duration(hours: 1)) {
         return false; // Schedules are too close
       }
     }
@@ -222,6 +222,7 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
   Future<bool> submitSchedule() async {
     final database = ScheduleOperations();
     final dateTimePicked = ref.read(dateTimeProvider.notifier).state;
+
     // Generate 3 schedules
     final schedules = generateDailySchedules(dateTimePicked);
 
@@ -233,17 +234,17 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     // Save all schedules
     for (final schedule in schedules) {
       await database.uploadSchedule(deviceId, schedule.dateTime);
-      // Schedule a notification 10 minutes before each wash time
-      final notificationTime = schedule.dateTime.subtract(const Duration(minutes: 10));
-      await NotificationService().scheduleNotification(
-        id: schedule.dateTime.millisecondsSinceEpoch ~/ 1000, // Unique ID
-        title: 'Pig Wash Reminder',
-        body: 'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(schedule.dateTime)}',
-        scheduledTime: notificationTime,
+
+      // Schedule a notification at the exact wash time
+      await NotificationService.scheduleNotification(
+        deviceId: deviceId,
+        title: 'Pig Wash Reminder', // Title
+        body:
+            'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(schedule.dateTime)}', // Body
+        scheduledDate: schedule.dateTime, // Exact wash time
+         payload: 'wash_$deviceId', // Optional payload
       );
-
     }
-
     return true;
     // await database.uploadSchedule(deviceId, dateTimePicked);
     // return Future.value(true);
@@ -328,24 +329,27 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     });
   }
 
-  void onPressedCreateBtn(BuildContext context) {
+  void onPressedCreateBtn(BuildContext context) async {
     if (!isFieldsNotEmpty()) return;
     if (!isDateAndTimeNotElapsed()) return;
-    //if (!isSchedHourAheadThanNow()) return;
 
-    showLoader(context, process: isScheduleNotDuplicate(deviceId))
-        .then((isNotDuplicate) {
+    try {
+      final isNotDuplicate =
+          await showLoader(context, process: isScheduleNotDuplicate(deviceId));
       if (isNotDuplicate == null || !isNotDuplicate) {
         HapticFeedback.heavyImpact();
-        return Future.value(false);
+        return;
       }
       resetProviders();
-      return submitSchedule();
-    }).then((result) {
+      await submitSchedule();
       if (!context.mounted) return;
       context.showSnackBar(Compliments().getGreeting(),
           theme: SnackbarTheme.success);
-    });
+    } catch (e) {
+      if (!context.mounted) return;
+      context.showSnackBar('Failed to schedule notifications: $e',
+          theme: SnackbarTheme.error);
+    }
   }
 
   @override
