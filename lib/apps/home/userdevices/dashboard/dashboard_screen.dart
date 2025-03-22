@@ -144,7 +144,7 @@ class BottomSection extends ConsumerWidget {
                   child:
                       _DataField(sensor: tempSensor, data: device.temperature),
                 ),
-                const SizedBox(width: 16), // Add spacing between columns
+                const SizedBox(width: 10), // Add spacing between columns
                 Expanded(
                   child: _DataField(sensor: humidSensor, data: device.humidity),
                 ),
@@ -184,7 +184,7 @@ class BottomSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ShaddowedContainer(
       child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 30, right: 30),
+        padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -207,16 +207,63 @@ class _DataField extends StatelessWidget {
   final String? stringData;
   const _DataField({required this.data, this.stringData, required this.sensor});
 
+  // Helper function for gas level declaration
+  String _getGasLevelDeclaration(int? ppm) {
+    if (ppm == null) return '';
+    if (ppm <= 10) return ' - Low';
+    if (ppm <= 25) return ' - Moderate';
+    if (ppm <= 50) return ' - High';
+    return ' - Very High';
+  }
+
+  // Helper function for temperature declaration
+  String _getTemperatureDeclaration(int? temp) {
+    if (temp == null) return '';
+    if (temp <= 10) return ' - Cold';
+    if (temp <= 25) return ' - Comfortable';
+    if (temp <= 35) return ' - Warm';
+    return ' - Hot';
+  }
+
+  // Helper function for humidity declaration
+  String _getHumidityDeclaration(int? humidity) {
+    if (humidity == null) return '';
+    if (humidity <= 30) return ' - Dry';
+    if (humidity <= 60) return ' - Comfortable';
+    return ' - Humid';
+  }
+
+  // Helper function for water level declaration
+  String _getWaterLevelDeclaration(int? waterLevel) {
+    if (waterLevel == null) return '';
+    if (waterLevel <= 20) return ' - Low';
+    if (waterLevel <= 50) return ' - Moderate';
+    if (waterLevel <= 80) return ' - High';
+    return ' - Very High';
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    const double maxWidth = 80;
+    const double maxWidth = 150;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(sensor.title.toCapitalizeFirst(), style: textTheme.labelLarge),
+          Text(
+            sensor.title.toCapitalizeFirst() +
+                (sensor == gasSensor
+                    ? _getGasLevelDeclaration(data)
+                    : sensor == tempSensor
+                        ? _getTemperatureDeclaration(data)
+                        : sensor == humidSensor
+                            ? _getHumidityDeclaration(data)
+                            : sensor == waterSensor
+                                ? _getWaterLevelDeclaration(data)
+                                : ''),
+            style: textTheme.labelLarge,
+          ),
           Text(
             (data ?? stringData ?? '').toString() + sensor.suffix,
             style: textTheme.headlineSmall?.copyWith(color: sensor.lineColor),

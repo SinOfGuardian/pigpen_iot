@@ -18,7 +18,7 @@ class DeviceData {
   factory DeviceData.fromJson(Map<Object?, Object?>? json) {
     if (json == null) {
       return const DeviceData(
-          temperature: 0, humidity: 0, gasDetection: 0, waterLevel: 0);
+          temperature: 30, humidity: 30, gasDetection: 30, waterLevel: 30);
     }
     return DeviceData(
       temperature: json['temperature'] as int? ?? 0,
@@ -70,13 +70,13 @@ const humidSensor = Sensor(
 );
 
 const gasSensor = Sensor(
-    title: 'gas detection',
-    suffix: ' ppm good',
+    title: 'Ammonia',
+    suffix: ' ppm',
     min: 0,
-    max: 100,
+    max: 60,
     lineColor: Colors.brown,
     noteMessage:
-        'device which detects the presence or concentration of gases in the atmosphere. '
+        'Device which detects the presence or concentration of gases in the atmosphere.'
     // 'soil particles, known as pore spaces. The higher the soil moisture, ',
     );
 
