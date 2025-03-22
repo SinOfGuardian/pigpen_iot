@@ -1,6 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ionicons/ionicons.dart';
+import 'package:pigpen_iot/apps/home/devices/device_list.dart';
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_viewmodel.dart';
+import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_viewmodel.dart';
+import 'package:pigpen_iot/custom/app_animated_widget.dart';
+import 'package:pigpen_iot/custom/app_circularprogressindicator.dart';
 import 'package:pigpen_iot/custom/app_container.dart';
+import 'package:pigpen_iot/custom/app_error_handling.dart';
+import 'package:pigpen_iot/custom/app_text.dart';
+import 'package:pigpen_iot/modules/responsive.dart';
+import 'package:pigpen_iot/modules/string_extensions.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -13,7 +24,7 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         children: [
           const Expanded(flex: 9, child: UpperSection()),
-          //const Expanded(flex: 10, child: BottomSection()),
+          const Expanded(flex: 10, child: BottomSection()),
           Container(height: 50, color: colorScheme.surface),
         ],
       ),
@@ -23,42 +34,6 @@ class DashboardScreen extends StatelessWidget {
 
 class UpperSection extends ConsumerWidget {
   const UpperSection({super.key});
-
-  // Widget _dataSection(BuildContext context, WidgetRef ref) {
-  //   final deviceId = ref
-  //       .watch(activeDeviceProvider.select((thing) => thing?.deviceId ?? '?'));
-  //   final nextSchedule = ref
-  //       .watch(schedulesProvider(deviceId))
-  //       .asData
-  //       ?.value
-  //       .firstOrNull
-  //       ?.dateTime;
-
-  //   final deviceProvider = ref.watch(deviceStreamProvider);
-  //   return SizedBox(
-  //     height: 290,
-  //     child: deviceProvider.when(
-  //       data: (device) {
-  //         return Column(
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children: [
-  //             _DataField(sensor: tempSensor, data: device.temperature),
-  //             _DataField(sensor: humidSensor, data: device.humidity),
-  //             _DataField(sensor: soilSensor, data: device.soilMoisture),
-  //             _DataField(
-  //               sensor: nextWatering,
-  //               data: null,
-  //               stringData: nextSchedule?.toString() ?? 'No schedule',
-  //             ),
-  //           ],
-  //         );
-  //       },
-  //       loading: () => const AppCircularProgressIndicator(),
-  //       error: (e, st) => AppErrorWidget(e as Exception, st, this),
-  //     ),
-  //   );
-  // }
 
   // Widget _graphic(BuildContext context, WidgetRef ref) {
   //   final screenHeight = MediaQuery.of(context).size.height;
@@ -74,7 +49,7 @@ class UpperSection extends ConsumerWidget {
 
   Widget _camera(BuildContext context, WidgetRef ref) {
     return Container(
-      height: 300,
+      height: 200,
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(10),
@@ -105,6 +80,105 @@ class UpperSection extends ConsumerWidget {
 class BottomSection extends ConsumerWidget {
   const BottomSection({super.key});
 
+  Widget _deviceName(BuildContext context, String? deviceName, WidgetRef ref) {
+    final isFavorited = ref.watch(favoriteProvider);
+    final notifier = ref.read(favoriteProvider.notifier);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FormTitle(
+                (deviceName ?? 'Name not available').toTitleCase(),
+                maxLines: isAppInFloatingWindow(context) ? 2 : 3,
+              ),
+              TextButton(
+                onPressed: () {},
+                child: Text(
+                  'Update Details',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 16,
+                    decoration: TextDecoration.underline, // Add underline
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: () => notifier.state = !isFavorited, // Toggle favorite state.
+          child: Icon(
+            isFavorited ? Ionicons.heart : Ionicons.heart_outline,
+            size: 30,
+            color: isFavorited ? Colors.red : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dataSection(BuildContext context, WidgetRef ref) {
+    final deviceId = ref
+        .watch(activeDeviceProvider.select((thing) => thing?.deviceId ?? '?'));
+    final nextSchedule = ref
+        .watch(schedulesProvider(deviceId))
+        .asData
+        ?.value
+        .firstOrNull
+        ?.dateTime;
+
+    final deviceProvider = ref.watch(deviceStreamProvider);
+    return deviceProvider.when(
+      data: (device) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // First Row: Two columns for Temperature and Humidity
+            Row(
+              children: [
+                Expanded(
+                  child:
+                      _DataField(sensor: tempSensor, data: device.temperature),
+                ),
+                const SizedBox(width: 16), // Add spacing between columns
+                Expanded(
+                  child: _DataField(sensor: humidSensor, data: device.humidity),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5), // Add spacing between rows
+            // Second Row: Two columns for Soil Moisture and an empty space
+            Row(
+              children: [
+                Expanded(
+                  child:
+                      _DataField(sensor: gasSensor, data: device.gasDetection),
+                ),
+                const SizedBox(width: 16), // Add spacing between columns
+                Expanded(
+                  child: Container(), // Empty space
+                ),
+              ],
+            ),
+            const SizedBox(height: 16), // Add spacing between rows
+            // Third Row: Full width for Next Watering
+            _DataField(
+              sensor: nextWatering,
+              data: null,
+              stringData: nextSchedule?.toString() ?? 'No schedule',
+            ),
+          ],
+        );
+      },
+      loading: () => const AppCircularProgressIndicator(),
+      error: (e, st) => AppErrorWidget(e as Exception, st, this),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ShaddowedContainer(
@@ -113,22 +187,52 @@ class BottomSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Recent Activity', style: TextStyle(fontSize: 20)),
-            const SizedBox(height: 20),
+            _deviceName(context, 'Device Name', ref),
             Expanded(
-              child: ListView.builder(
-                itemCount: 10,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: const Text('Activity'),
-                    subtitle: const Text('Time'),
-                  );
-                },
-              ),
+              child: _dataSection(context, ref),
             ),
+            // _description(context, 'description'),
+            // _characteristicSection(context),
           ],
         ),
       ),
     );
   }
 }
+
+class _DataField extends StatelessWidget {
+  final int? data;
+  final Sensor sensor;
+  final String? stringData;
+  const _DataField({required this.data, this.stringData, required this.sensor});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    const double maxWidth = 80;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(sensor.title.toCapitalizeFirst(), style: textTheme.labelLarge),
+          Text(
+            (data ?? stringData ?? '').toString() + sensor.suffix,
+            style: textTheme.headlineSmall?.copyWith(color: sensor.lineColor),
+          ),
+          data == null
+              ? const SizedBox()
+              : HorizontalProgressBar(
+                  data: data?.toDouble(),
+                  maxWidth: maxWidth,
+                  min: sensor.min,
+                  max: sensor.max,
+                  lineColor: sensor.lineColor,
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+final favoriteProvider = StateProvider<bool>((ref) => false);

@@ -6,7 +6,7 @@ part of 'add_devices_viewmodel.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pageDataHash() => r'5c3497356340b2ac2b2f2666883747d97e6e3bd6';
+String _$pageDataHash() => r'0dcaeb92703f68c25104e6f497157d6fc666c26a';
 
 /// See also [PageData].
 @ProviderFor(PageData)

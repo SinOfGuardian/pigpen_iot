@@ -45,7 +45,7 @@ class AddDeviceScreen extends ConsumerWidget with InternetConnection {
 
       if (connectionStatus == null || !connectionStatus) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No internet connection')),
+          const SnackBar(content: Text('No internet connection')),
         );
         return;
       }

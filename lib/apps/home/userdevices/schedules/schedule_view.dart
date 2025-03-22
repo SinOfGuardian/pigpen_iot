@@ -31,10 +31,11 @@ import 'package:pigpen_iot/modules/widgetview.dart';
 import 'package:pigpen_iot/router.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 const _pageTitle = 'Schedule';
 const _pageDescription =
-    'Scheduling is optional, the watering is fully automated and handles by the device.';
+    'Scheduling is totally optional—it just sends you a reminder when it’s time to wash the pigs, since that part isn’t automated.';
 const String _confirDeletemMessage =
     'Are you sure you want to delete this schedule?';
 
@@ -223,6 +224,9 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     final database = ScheduleOperations();
     final dateTimePicked = ref.read(dateTimeProvider.notifier).state;
 
+    // Log the deviceId
+    print('Device ID: $deviceId');
+
     // Generate 3 schedules
     final schedules = generateDailySchedules(dateTimePicked);
 
@@ -235,19 +239,39 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     for (final schedule in schedules) {
       await database.uploadSchedule(deviceId, schedule.dateTime);
 
-      // Schedule a notification at the exact wash time
+      // Convert DateTime to TZDateTime (local time zone)
+      final tzScheduledDate = tz.TZDateTime.from(schedule.dateTime, tz.local);
+      print('Original DateTime: ${schedule.dateTime}');
+      print('Converted TZDateTime: $tzScheduledDate');
+
+      // Get the current time in the local time zone
+      final now = tz.TZDateTime.now(tz.local);
+      print('Current Time: $now');
+
+      // Calculate the difference between the scheduled time and the current time
+      final durationUntilScheduled = tzScheduledDate.difference(now);
+      print('Duration Until Scheduled: $durationUntilScheduled');
+
+      // Subtract 1 second from the duration
+      final adjustedDuration =
+          durationUntilScheduled - const Duration(seconds: 1);
+      print('Adjusted Duration (minus 1 second): $adjustedDuration');
+
+      // Schedule a notification using the adjusted duration
+      final notificationTime = now.add(adjustedDuration);
+      print('Scheduled Notification Time: $notificationTime');
+
       await NotificationService.scheduleNotification(
-        deviceId: deviceId,
         title: 'Pig Wash Reminder', // Title
         body:
             'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(schedule.dateTime)}', // Body
-        scheduledDate: schedule.dateTime, // Exact wash time
-         payload: 'wash_$deviceId', // Optional payload
+        scheduledDate: notificationTime, // Use adjusted time
+        payload: 'wash now', // Optional payload
       );
+
+      print('Scheduled notification at: $notificationTime');
     }
     return true;
-    // await database.uploadSchedule(deviceId, dateTimePicked);
-    // return Future.value(true);
   }
 
   void resetProviders() {
@@ -509,7 +533,7 @@ class _ScheduledSectionState extends ConsumerState<_ScheduledSection> {
 
   void onTappedViewAll(Widget child, BuildContext context) {
     if (lastSchedulesLength == 0) return;
-    context.push('/app/plant/scheduled-watering', extra: child);
+    context.push('/home/user-device/scheduled-watering', extra: child);
   }
 
   @override

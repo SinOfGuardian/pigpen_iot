@@ -6,7 +6,7 @@ part of 'animals_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$animalsHash() => r'b6df09ee10899e00c16eccd4530aa28cc6b27dbc';
+String _$animalsHash() => r'04062ed39c2d2c3017343027b6613d4b82cbe935';
 
 /// See also [Animals].
 @ProviderFor(Animals)

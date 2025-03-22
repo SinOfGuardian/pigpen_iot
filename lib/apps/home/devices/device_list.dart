@@ -22,10 +22,11 @@ final _availableDevices = Provider.autoDispose
   if (query == null || query.isEmpty) return availableDevices;
   return availableDevices.where((device) {
     if (device.deviceId.toLowerCase().contains(query.toLowerCase()) ||
-        device.deviceName.toLowerCase().contains(query.toLowerCase()))
+        device.deviceName.toLowerCase().contains(query.toLowerCase())) {
       return true;
-    else
+    } else {
       return false;
+    }
   }).toList();
 });
 

@@ -9,11 +9,11 @@ class NotificationScreen extends StatelessWidget {
   Future<void> _triggerTestNotification() async {
     try {
       await NotificationService.scheduleNotification(
-        deviceId: 'test_device_id', // Replace with a test device ID
+        //deviceId: 'test_device_id', // Replace with a test device ID
         title: 'Test Notification', // Title of the notification
         body: 'This is a test notification!', // Body of the notification
         scheduledDate: tz.TZDateTime.now(tz.local)
-            .add(const Duration(seconds: 5)), // 5 seconds from now
+            .add(const Duration(seconds: 1)), // 5 seconds from now
         payload: 'test_payload', // Optional payload
       );
     } catch (e) {

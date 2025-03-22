@@ -3,10 +3,8 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/> <!-- Optional, for foreground services -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/> 
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -74,15 +72,6 @@
         <service
             android:name="com.dexterous.flutterlocalnotifications.FlutterLocalNotificationsService"
             android:exported="true"/>
-
-        <!-- Activity to show when the device is locked -->
-        <!-- Add the name attribute here -->
-        
-        <activity
-            android:name=".MainActivity" 
-            android:showWhenLocked="true"
-            android:turnScreenOn="true"/>
-        <!-- </activity> -->
        
     </application>
 </manifest>

@@ -2,56 +2,78 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
 
 class NotificationService {
-  static final _notifications = FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
 
+  /// Initializes the notification service
   static Future<void> init() async {
     tz.initializeTimeZones();
 
-    const AndroidInitializationSettings androidInitializationSettings =
+    const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
-      android: androidInitializationSettings,
+      android: androidSettings,
     );
 
     await _notifications.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
         print('Notification tapped: ${response.payload}');
-        // Handle notification tap (e.g., navigate to a specific screen)
+        // Handle notification tap (navigate, etc.)
       },
     );
 
-    await createNotificationChannel(); // Create the notification channel
+    await _createNotificationChannel();
   }
 
-  static Future<void> createNotificationChannel() async {
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      'pig_wash_channel', // Channel ID
-      'Pig Wash Reminders', // Channel name
-      importance: Importance.max,
-      description: 'Channel for pig wash reminders',
-    );
+  /// Creates the notification channel for Android 8.0+
+  static Future<void> _createNotificationChannel() async {
+    if (Platform.isAndroid && (await _isAndroid8OrHigher())) {
+      const AndroidNotificationChannel channel = AndroidNotificationChannel(
+        'pig_wash_channel', // Channel ID
+        'Pig Wash Reminders', // Channel name
+        description: 'Reminders for pig wash schedules',
+        importance: Importance.max,
+      );
 
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()!
-        .createNotificationChannel(channel);
-  }
-
-  static Future<bool> checkAndRequestExactAlarmPermission() async {
-    if (await Permission.scheduleExactAlarm.isGranted) {
-      return true;
+      await _notifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
     }
-    final status = await Permission.scheduleExactAlarm.request();
-    return status.isGranted;
   }
 
+  /// Checks if the device runs Android 8.0+ (API 26+)
+  static Future<bool> _isAndroid8OrHigher() async {
+    return Platform.isAndroid && int.parse(Platform.version.split('.')[0]) >= 8;
+  }
+
+  /// Ensures exact alarm permissions are properly handled on Android 13+
+  static Future<bool> checkAndRequestExactAlarmPermission() async {
+    if (Platform.isAndroid && (await _isAndroid13OrHigher())) {
+      if (await Permission.scheduleExactAlarm.isGranted) {
+        return true;
+      }
+      final status = await Permission.scheduleExactAlarm.request();
+      return status.isGranted;
+    }
+    return true; // No need for this permission on lower Android versions
+  }
+
+  /// Checks if the device runs Android 13+ (API 33+)
+  static Future<bool> _isAndroid13OrHigher() async {
+    return Platform.isAndroid &&
+        int.parse(Platform.version.split('.')[0]) >= 13;
+  }
+
+  /// Schedules a notification
   static Future<void> scheduleNotification({
-    required String deviceId,
+    // required String deviceId,
     required String title,
     required String body,
     required DateTime scheduledDate,
@@ -60,7 +82,8 @@ class NotificationService {
     try {
       final hasPermission = await checkAndRequestExactAlarmPermission();
       if (!hasPermission) {
-        throw Exception('Exact alarm permission not granted');
+        print('Exact alarm permission not granted');
+        return;
       }
 
       const AndroidNotificationDetails androidDetails =
@@ -71,17 +94,16 @@ class NotificationService {
         priority: Priority.high,
       );
 
-      const NotificationDetails notificationDetails =
-          NotificationDetails(android: androidDetails);
+      const NotificationDetails notificationDetails = NotificationDetails(
+        android: androidDetails,
+      );
 
       await _notifications.zonedSchedule(
         0, // Notification ID
         title,
         body,
-        tz.TZDateTime.from(
-            scheduledDate, tz.local), // Convert to local time zone
+        tz.TZDateTime.from(scheduledDate, tz.local), // Local time zone
         notificationDetails,
-        matchDateTimeComponents: DateTimeComponents.time,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
       );
@@ -93,6 +115,7 @@ class NotificationService {
     }
   }
 
+  /// Cancels all scheduled notifications
   static Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
     print('All notifications canceled');

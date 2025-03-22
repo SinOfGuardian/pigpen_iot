@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
 
 
@@ -11,15 +12,15 @@ const Duration TIMEOUT_TIME = Duration(seconds: 5);
 // ignore: constant_identifier_names
 const String TIMEOUT_MESSAGE = 'The operation has timeout';
 
-// class DeviceFirebase {
-//   final _database = FirebaseDatabase.instance;
-//   final _path = '/realtime/devices/';
+class DeviceFirebase {
+  final _database = FirebaseDatabase.instance;
+  final _path = '/realtime/devices/';
 
-//   Stream<DeviceData> deviceStream(String deviceId) {
-//     return _database.ref(_path).child(deviceId).onValue.map(
-//         (user) => DeviceData.fromJson(user.snapshot.value as Map<Object?, Object?>?));
-//   }
-// }
+  Stream<DeviceData> deviceStream(String deviceId) {
+    return _database.ref(_path).child(deviceId).onValue.map(
+        (user) => DeviceData.fromJson(user.snapshot.value as Map<Object?, Object?>?));
+  }
+}
 
 
 

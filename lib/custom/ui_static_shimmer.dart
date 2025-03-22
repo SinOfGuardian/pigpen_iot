@@ -35,7 +35,7 @@ class StaticShimmer extends StatelessWidget {
     final color = Theme.of(context).colorScheme.outlineVariant;
     return FractionallySizedBox(
       widthFactor: widthFactor,
-      child: Container(
+      child: SizedBox(
         height: height,
         width: width,
         child: shape == null || shape == StaticShimmerShape.roundedRectangle
