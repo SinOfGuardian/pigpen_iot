@@ -160,7 +160,8 @@ class BottomSection extends ConsumerWidget {
                 ),
                 const SizedBox(width: 16), // Add spacing between columns
                 Expanded(
-                  child: Container(), // Empty space
+                  child:
+                      _DataField(sensor: waterSensor, data: device.waterLevel),
                 ),
               ],
             ),

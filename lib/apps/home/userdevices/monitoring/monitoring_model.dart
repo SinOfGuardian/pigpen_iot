@@ -6,22 +6,25 @@ class DeviceData {
   final int temperature;
   final int humidity;
   final int gasDetection;
-  
+  final int waterLevel;
 
   const DeviceData({
     required this.temperature,
     required this.humidity,
     required this.gasDetection,
+    required this.waterLevel,
   });
 
   factory DeviceData.fromJson(Map<Object?, Object?>? json) {
     if (json == null) {
-      return const DeviceData(temperature: 0, humidity: 0, gasDetection: 0);
+      return const DeviceData(
+          temperature: 0, humidity: 0, gasDetection: 0, waterLevel: 0);
     }
     return DeviceData(
       temperature: json['temperature'] as int? ?? 0,
       humidity: json['humidity'] as int? ?? 0,
       gasDetection: json['gas_detection'] as int? ?? 0,
+      waterLevel: json['water_level'] as int? ?? 0,
     );
   }
 }
@@ -68,7 +71,7 @@ const humidSensor = Sensor(
 
 const gasSensor = Sensor(
     title: 'gas detection',
-    suffix: '%',
+    suffix: ' ppm good',
     min: 0,
     max: 100,
     lineColor: Colors.brown,
@@ -76,6 +79,16 @@ const gasSensor = Sensor(
         'device which detects the presence or concentration of gases in the atmosphere. '
     // 'soil particles, known as pore spaces. The higher the soil moisture, ',
     );
+
+const waterSensor = Sensor(
+  title: 'water level',
+  suffix: '%',
+  min: 0,
+  max: 100,
+  lineColor: Colors.purple,
+  noteMessage: 'It works by sensing changes in conductivity or resistance '
+      'when it comes into contact with water. ',
+);
 
 const nextWatering = Sensor(
   title: 'Next Bath Time',
