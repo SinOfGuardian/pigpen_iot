@@ -3,7 +3,13 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:pigpen_iot/apps/home/devices/device_list.dart';
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
+import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_viewmodel.dart';
+import 'package:pigpen_iot/custom/app_bottomsheet.dart';
+import 'package:pigpen_iot/custom/app_header.dart';
+import 'package:pigpen_iot/modules/string_extensions.dart';
+import 'package:pigpen_iot/modules/widgetview.dart';
 
 const _pageTitle = 'Live Monitoring';
 const _pageDescription = 'Visible live data covers the current 1 min and is '
@@ -16,7 +22,8 @@ class MonitoringScreen extends StatelessWidget {
   Widget _header() {
     return Consumer(
       builder: (context, ref, child) {
-        final url = ref.watch(activeDeviceProvider.select((thing) => thing!.graphicUrl));
+        final url = ref
+            .watch(activeDeviceProvider.select((thing) => thing!.graphicUrl));
         return Header.titleWithDeviceGraphic(
           title: _pageTitle,
           description: _pageDescription,
@@ -55,7 +62,7 @@ class _GraphsSection extends ConsumerStatefulWidget {
 class _GraphsSectionState extends ConsumerState<_GraphsSection>
     with AutomaticKeepAliveClientMixin {
   late final Timer timer;
-  int tempVal = 0, humidVal = 0, soilMoistVal = 0;
+  int tempVal = 0, humidVal = 0, gasVal = 0, waterVal = 0;
 
   @override
   bool get wantKeepAlive => true;
@@ -68,7 +75,8 @@ class _GraphsSectionState extends ConsumerState<_GraphsSection>
       (timer) {
         ref.read(graphDataProvider(tempSensor).notifier).update(tempVal);
         ref.read(graphDataProvider(humidSensor).notifier).update(humidVal);
-        ref.read(graphDataProvider(soilSensor).notifier).update(soilMoistVal);
+        ref.read(graphDataProvider(gasSensor).notifier).update(gasVal);
+        ref.read(graphDataProvider(waterSensor).notifier).update(waterVal);
       },
     );
 
@@ -79,7 +87,8 @@ class _GraphsSectionState extends ConsumerState<_GraphsSection>
         newState.whenData((device) {
           tempVal = device.temperature;
           humidVal = device.humidity;
-          soilMoistVal = device.soilMoisture;
+          gasVal = device.gasDetection;
+          waterVal = device.waterLevel;
         });
       },
     );
@@ -112,7 +121,9 @@ class _GraphSectionView extends StlsView<_GraphsSectionState> {
             const SizedBox(height: 20),
             _SingleGraph(provider: graphDataProvider(humidSensor)),
             const SizedBox(height: 20),
-            _SingleGraph(provider: graphDataProvider(soilSensor)),
+            _SingleGraph(provider: graphDataProvider(gasSensor)),
+            const SizedBox(height: 20),
+            _SingleGraph(provider: graphDataProvider(waterSensor)),
           ],
         ),
       ),
@@ -125,7 +136,8 @@ class _SingleGraph extends ConsumerWidget {
   final AutoDisposeStateNotifierProvider<GraphNotifier, GraphData> provider;
   const _SingleGraph({required this.provider});
 
-  final TextStyle labelTextStyle = const TextStyle(color: Colors.grey, fontSize: 10);
+  final TextStyle labelTextStyle =
+      const TextStyle(color: Colors.grey, fontSize: 10);
 
   List<FlSpot> convertListToSpots(List<int> list) {
     return list.asMap().entries.map((e) {
@@ -137,11 +149,13 @@ class _SingleGraph extends ConsumerWidget {
     return Row(
       children: [
         // const Text('H'),
-        const SizedBox(width: 18, child: Icon(Icons.arrow_drop_up_rounded, size: 20)),
+        const SizedBox(
+            width: 18, child: Icon(Icons.arrow_drop_up_rounded, size: 20)),
         Text(highest.toString(), style: const TextStyle(fontSize: 12)),
         const SizedBox(width: 5),
         // const Text('L'),
-        const SizedBox(width: 18, child: Icon(Icons.arrow_drop_down_rounded, size: 20)),
+        const SizedBox(
+            width: 18, child: Icon(Icons.arrow_drop_down_rounded, size: 20)),
         Text(lowest.toString(), style: const TextStyle(fontSize: 12)),
       ],
     );
@@ -211,20 +225,24 @@ class _SingleGraph extends ConsumerWidget {
     return result.toInt().toDouble();
   }
 
-  LineChartData _mainData(BuildContext context, List<FlSpot> spots, GraphData graphData) {
+  LineChartData _mainData(
+      BuildContext context, List<FlSpot> spots, GraphData graphData) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return LineChartData(
       gridData: FlGridData(
         show: true,
         drawVerticalLine: true,
-        horizontalInterval: getHorizontalInterval(graphData.minY, graphData.maxY),
+        horizontalInterval:
+            getHorizontalInterval(graphData.minY, graphData.maxY),
         verticalInterval: 3.333333333333333,
         getDrawingHorizontalLine: (value) {
-          return FlLine(color: colorScheme.surfaceContainerHighest, strokeWidth: 1);
+          return FlLine(
+              color: colorScheme.surfaceContainerHighest, strokeWidth: 1);
         },
         getDrawingVerticalLine: (value) {
-          return FlLine(color: colorScheme.surfaceContainerHighest, strokeWidth: 1);
+          return FlLine(
+              color: colorScheme.surfaceContainerHighest, strokeWidth: 1);
         },
       ),
       titlesData: FlTitlesData(
@@ -234,7 +252,8 @@ class _SingleGraph extends ConsumerWidget {
             showTitles: true,
             reservedSize: 35,
             interval: 1,
-            getTitlesWidget: (value, meta) => _leftIndicator(value, meta, graphData),
+            getTitlesWidget: (value, meta) =>
+                _leftIndicator(value, meta, graphData),
           ),
         ),
         bottomTitles: AxisTitles(
@@ -246,7 +265,8 @@ class _SingleGraph extends ConsumerWidget {
           ),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        rightTitles:
+            const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       borderData: FlBorderData(show: false),
       lineTouchData: LineTouchData(
