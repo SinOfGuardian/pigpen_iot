@@ -12,6 +12,7 @@ import 'package:pigpen_iot/custom/app_error_handling.dart';
 import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
+import 'package:pigpen_iot/services/notification_service.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -242,45 +243,123 @@ class _DataField extends StatelessWidget {
     return ' - Very High';
   }
 
+  // Function to trigger notifications based on sensor data
+  void _checkAndTriggerNotification(BuildContext context, WidgetRef ref) {
+    if (data == null) return;
+
+    final notificationState = ref.read(notificationStateProvider);
+    final sensorKey = sensor.title;
+
+    String notificationTitle = '';
+    String notificationBody = '';
+
+    switch (sensor) {
+      case gasSensor:
+        if (data! > 50 && !(notificationState[sensorKey] ?? false)) {
+          notificationTitle = 'High Ammonia Level Detected!';
+          notificationBody = 'Ammonia level is very high ($data ppm).';
+          ref.read(notificationStateProvider.notifier).state = {
+            ...notificationState,
+            sensorKey: true,
+          };
+        }
+        break;
+      case tempSensor:
+        if (data! > 35 && !(notificationState[sensorKey] ?? false)) {
+          notificationTitle = 'High Temperature Detected!';
+          notificationBody = 'Temperature is very high ($data°C).';
+          ref.read(notificationStateProvider.notifier).state = {
+            ...notificationState,
+            sensorKey: true,
+          };
+        }
+        break;
+      case humidSensor:
+        if (data! > 60 && !(notificationState[sensorKey] ?? false)) {
+          notificationTitle = 'High Humidity Detected!';
+          notificationBody = 'Humidity is very high ($data%).';
+          ref.read(notificationStateProvider.notifier).state = {
+            ...notificationState,
+            sensorKey: true,
+          };
+        }
+        break;
+      case waterSensor:
+        if (data! > 80 && !(notificationState[sensorKey] ?? false)) {
+          notificationTitle = 'High Water Level Detected!';
+          notificationBody = 'Water level is very high ($data%).';
+          ref.read(notificationStateProvider.notifier).state = {
+            ...notificationState,
+            sensorKey: true,
+          };
+        }
+        break;
+      default:
+        break;
+    }
+
+    if (notificationTitle.isNotEmpty && notificationBody.isNotEmpty) {
+      NotificationService.scheduleNotification(
+        title: notificationTitle,
+        body: notificationBody,
+        scheduledDate: DateTime.now()
+            .add(const Duration(seconds: 1)), // Immediate notification
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     const double maxWidth = 150;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            sensor.title.toCapitalizeFirst() +
-                (sensor == gasSensor
-                    ? _getGasLevelDeclaration(data)
-                    : sensor == tempSensor
-                        ? _getTemperatureDeclaration(data)
-                        : sensor == humidSensor
-                            ? _getHumidityDeclaration(data)
-                            : sensor == waterSensor
-                                ? _getWaterLevelDeclaration(data)
-                                : ''),
-            style: textTheme.labelLarge,
+
+    // Check and trigger notifications
+    return Consumer(
+      builder: (context, ref, child) {
+        // Check and trigger notifications
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkAndTriggerNotification(context, ref);
+        });
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                sensor.title.toCapitalizeFirst() +
+                    (sensor == gasSensor
+                        ? _getGasLevelDeclaration(data)
+                        : sensor == tempSensor
+                            ? _getTemperatureDeclaration(data)
+                            : sensor == humidSensor
+                                ? _getHumidityDeclaration(data)
+                                : sensor == waterSensor
+                                    ? _getWaterLevelDeclaration(data)
+                                    : ''),
+                style: textTheme.labelLarge,
+              ),
+              Text(
+                (data ?? stringData ?? '').toString() + sensor.suffix,
+                style:
+                    textTheme.headlineSmall?.copyWith(color: sensor.lineColor),
+              ),
+              data == null
+                  ? const SizedBox()
+                  : HorizontalProgressBar(
+                      data: data?.toDouble(),
+                      maxWidth: maxWidth,
+                      min: sensor.min,
+                      max: sensor.max,
+                      lineColor: sensor.lineColor,
+                    ),
+            ],
           ),
-          Text(
-            (data ?? stringData ?? '').toString() + sensor.suffix,
-            style: textTheme.headlineSmall?.copyWith(color: sensor.lineColor),
-          ),
-          data == null
-              ? const SizedBox()
-              : HorizontalProgressBar(
-                  data: data?.toDouble(),
-                  maxWidth: maxWidth,
-                  min: sensor.min,
-                  max: sensor.max,
-                  lineColor: sensor.lineColor,
-                ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
 final favoriteProvider = StateProvider<bool>((ref) => false);
+final notificationStateProvider = StateProvider<Map<String, bool>>((ref) => {});

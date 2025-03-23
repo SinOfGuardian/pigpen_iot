@@ -310,6 +310,9 @@ class _SingleGraph extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final graphData = ref.watch(provider);
+    print('Water Level Data: ${graphData.arrayOfData}'); // Debug print
+    print('Water Level Color: ${graphData.sensor.lineColor}'); // Debug print
+
     return RepaintBoundary(
       child: AspectRatio(
         aspectRatio: 2 / 1,

@@ -18,7 +18,7 @@ class DeviceData {
   factory DeviceData.fromJson(Map<Object?, Object?>? json) {
     if (json == null) {
       return const DeviceData(
-          temperature: 30, humidity: 30, gasDetection: 30, waterLevel: 30);
+          temperature: 0, humidity: 0, gasDetection: 0, waterLevel: 0);
     }
     return DeviceData(
       temperature: json['temperature'] as int? ?? 0,
