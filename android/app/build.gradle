@@ -23,6 +23,13 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// Uncomment and configure if you want to use a keystore for signing
+// def keystoreProperties = new Properties()
+// def keystorePropertiesFile = rootProject.file('key.properties')
+// if (keystorePropertiesFile.exists()) {
+//     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+// }
+
 android {
     namespace = "com.example.pigpen_iot"
     compileSdk = 35 // Update to the latest compileSdkVersion
@@ -46,12 +53,29 @@ android {
         multiDexEnabled = true // Enable multidex support
     }
 
+    // Uncomment and configure if you want to use a keystore for signing
+    // signingConfigs {
+    //     release {
+    //         keyAlias keystoreProperties['keyAlias']
+    //         keyPassword keystoreProperties['keyPassword']
+    //         storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+    //         storePassword keystoreProperties['storePassword']
+    //     }
+    // }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            // Uncomment to use the release signing config
+            // signingConfig signingConfigs.release
+            signingConfig = signingConfigs.debug // Use debug signing for now (replace with release config for production)
+
             // Enable code shrinking and obfuscation for release builds
             minifyEnabled = true
+            shrinkResources = true // Enable resource shrinking
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            signingConfig = signingConfigs.debug
         }
     }
 }
@@ -66,8 +90,7 @@ dependencies {
     implementation 'com.android.support:multidex:2.0.1' // Multidex support
     implementation 'androidx.work:work-runtime:2.8.1' // WorkManager for background tasks
     implementation 'androidx.core:core-ktx:1.12.0' // AndroidX Core KTX
-     implementation 'com.google.android.gms:play-services-basement:18.4.0'  // ✅ Add this
-    implementation 'com.google.android.gms:play-services-auth:20.7.0'       // ✅ For Firebase Auth
-    implementation 'com.google.android.gms:play-services-location:21.0.1'   // ✅ If you use location
-    
+    implementation 'com.google.android.gms:play-services-basement:18.2.0' // Play Services Basement
+    implementation 'com.google.android.gms:play-services-auth:20.7.0' // Firebase Auth
+    implementation 'com.google.android.gms:play-services-location:21.0.1' // Location services
 }
