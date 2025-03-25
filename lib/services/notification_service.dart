@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -8,12 +9,12 @@ class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  /// Initializes the notification service
+  /// Initializes the notification service with your custom icon
   static Future<void> init() async {
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/pig_icon250x250');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(
@@ -31,14 +32,18 @@ class NotificationService {
     await _createNotificationChannel();
   }
 
-  /// Creates the notification channel for Android 8.0+
+  /// Creates the notification channel with your custom icon
   static Future<void> _createNotificationChannel() async {
     if (Platform.isAndroid && (await _isAndroid8OrHigher())) {
       const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'pig_wash_channel', // Channel ID
-        'Pig Wash Reminders', // Channel name
+        'pig_wash_channel',
+        'Pig Wash Reminders',
         description: 'Reminders for pig wash schedules',
         importance: Importance.max,
+        sound: RawResourceAndroidNotificationSound(
+            'notification_sound'), // Optional sound
+        enableVibration: true,
+        showBadge: true,
       );
 
       await _notifications
@@ -53,7 +58,7 @@ class NotificationService {
     return Platform.isAndroid && int.parse(Platform.version.split('.')[0]) >= 8;
   }
 
-  /// Ensures exact alarm permissions are properly handled on Android 13+
+  /// Handles exact alarm permissions for Android 13+
   static Future<bool> checkAndRequestExactAlarmPermission() async {
     if (Platform.isAndroid && (await _isAndroid13OrHigher())) {
       if (await Permission.scheduleExactAlarm.isGranted) {
@@ -62,7 +67,7 @@ class NotificationService {
       final status = await Permission.scheduleExactAlarm.request();
       return status.isGranted;
     }
-    return true; // No need for this permission on lower Android versions
+    return true;
   }
 
   /// Checks if the device runs Android 13+ (API 33+)
@@ -71,9 +76,8 @@ class NotificationService {
         int.parse(Platform.version.split('.')[0]) >= 13;
   }
 
-  /// Schedules a notification
+  /// Schedules a notification with your custom icon
   static Future<void> scheduleNotification({
-    // required String deviceId,
     required String title,
     required String body,
     required DateTime scheduledDate,
@@ -92,6 +96,12 @@ class NotificationService {
         'Pig Wash Reminders', // Channel name
         importance: Importance.max,
         priority: Priority.high,
+        icon: '@mipmap/pig_icon250x250',
+        largeIcon: DrawableResourceAndroidBitmap('@mipmap/pig_icon250x250'),
+        color: Colors.green, // Accent color
+        enableVibration: true,
+        playSound: true,
+        channelShowBadge: true,
       );
 
       const NotificationDetails notificationDetails = NotificationDetails(
@@ -102,7 +112,7 @@ class NotificationService {
         0, // Notification ID
         title,
         body,
-        tz.TZDateTime.from(scheduledDate, tz.local), // Local time zone
+        tz.TZDateTime.from(scheduledDate, tz.local),
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
