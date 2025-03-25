@@ -92,45 +92,45 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
   final timeInfoMessage = 'Choose time that has not been elapsed';
 
   // Generate 3 schedules for the selected date and time
-  List<Schedule> generateDailySchedules(DateTime selectedDateTime) {
-    final schedules = <Schedule>[];
-    const interval = Duration(hours: 6); // 6 hours apart
+  // List<Schedule> generateDailySchedules(DateTime selectedDateTime) {
+  //   final schedules = <Schedule>[];
+  //   const interval = Duration(hours: 6); // 6 hours apart
 
-    for (int i = 0; i < 3; i++) {
-      final scheduleTime = selectedDateTime.add(interval * i);
-      schedules.add(
-        Schedule(
-          key: '${deviceId}_${scheduleTime.toIso8601String()}', // Unique key
-          dateTime: scheduleTime,
-        ),
-      );
-    }
+  //   for (int i = 0; i < 3; i++) {
+  //     final scheduleTime = selectedDateTime.add(interval * i);
+  //     schedules.add(
+  //       Schedule(
+  //         key: '${deviceId}_${scheduleTime.toIso8601String()}', // Unique key
+  //         dateTime: scheduleTime,
+  //       ),
+  //     );
+  //   }
 
-    return schedules;
-  }
+  //   return schedules;
+  // }
 
-  // Validate the 3 schedules
-  bool validateSchedules(List<Schedule> schedules) {
-    final now = DateTime.now();
+  // // Validate the 3 schedules
+  // bool validateSchedules(List<Schedule> schedules) {
+  //   final now = DateTime.now();
 
-    // Check if any schedule is in the past
-    for (final schedule in schedules) {
-      if (schedule.dateTime.isBefore(now)) {
-        return false; // Schedule is in the past
-      }
-    }
+  //   // Check if any schedule is in the past
+  //   for (final schedule in schedules) {
+  //     if (schedule.dateTime.isBefore(now)) {
+  //       return false; // Schedule is in the past
+  //     }
+  //   }
 
-    // Check if schedules are at least 1 hour apart
-    for (int i = 1; i < schedules.length; i++) {
-      final previousTime = schedules[i - 1].dateTime;
-      final currentTime = schedules[i].dateTime;
-      if (currentTime.difference(previousTime) < const Duration(hours: 1)) {
-        return false; // Schedules are too close
-      }
-    }
+  //   // Check if schedules are at least 1 hour apart
+  //   for (int i = 1; i < schedules.length; i++) {
+  //     final previousTime = schedules[i - 1].dateTime;
+  //     final currentTime = schedules[i].dateTime;
+  //     if (currentTime.difference(previousTime) < const Duration(hours: 1)) {
+  //       return false; // Schedules are too close
+  //     }
+  //   }
 
-    return true;
-  }
+  //   return true;
+  // }
 
   bool isFieldsNotEmpty() {
     final date = ref.read(dateController.notifier);
@@ -228,49 +228,49 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     print('Device ID: $deviceId');
 
     // Generate 3 schedules
-    final schedules = generateDailySchedules(dateTimePicked);
+    // final schedules = generateDailySchedules(dateTimePicked);
 
     // Validate the schedules
-    if (!validateSchedules(schedules)) {
-      return false;
-    }
+    // if (!validateSchedules(schedules)) {
+    //   return false;
+    // }
 
     // Save all schedules
-    for (final schedule in schedules) {
-      await database.uploadSchedule(deviceId, schedule.dateTime);
+    // for (final schedule in schedules) {
+    await database.uploadSchedule(deviceId, dateTimePicked);
 
-      // Convert DateTime to TZDateTime (local time zone)
-      final tzScheduledDate = tz.TZDateTime.from(schedule.dateTime, tz.local);
-      print('Original DateTime: ${schedule.dateTime}');
-      print('Converted TZDateTime: $tzScheduledDate');
+    // Convert DateTime to TZDateTime (local time zone)
+    final tzScheduledDate = tz.TZDateTime.from(dateTimePicked, tz.local);
+    print('Original DateTime: ${dateTimePicked.toIso8601String()}');
+    print('Converted TZDateTime: $tzScheduledDate');
 
-      // Get the current time in the local time zone
-      final now = tz.TZDateTime.now(tz.local);
-      print('Current Time: $now');
+    // Get the current time in the local time zone
+    final now = tz.TZDateTime.now(tz.local);
+    print('Current Time: $now');
 
-      // Calculate the difference between the scheduled time and the current time
-      final durationUntilScheduled = tzScheduledDate.difference(now);
-      print('Duration Until Scheduled: $durationUntilScheduled');
+    // Calculate the difference between the scheduled time and current time
+    final durationUntilScheduled = tzScheduledDate.difference(now);
+    print('Duration Until Scheduled: $durationUntilScheduled');
 
-      // Subtract 1 second from the duration
-      final adjustedDuration =
-          durationUntilScheduled - const Duration(seconds: 1);
-      print('Adjusted Duration (minus 1 second): $adjustedDuration');
+    // Subtract 1 second from the duration
+    final adjustedDuration =
+        durationUntilScheduled - const Duration(seconds: 1);
+    print('Adjusted Duration (minus 1 second): $adjustedDuration');
 
-      // Schedule a notification using the adjusted duration
-      final notificationTime = now.add(adjustedDuration);
-      print('Scheduled Notification Time: $notificationTime');
+    // Schedule a notification using the adjusted duration
+    final notificationTime = now.add(adjustedDuration);
+    print('Scheduled Notification Time: $notificationTime');
 
-      await NotificationService.scheduleNotification(
-        title: 'Pig Wash Reminder', // Title
-        body:
-            'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(schedule.dateTime)}', // Body
-        scheduledDate: notificationTime, // Use adjusted time
-        payload: 'wash now', // Optional payload
-      );
+    await NotificationService.scheduleNotification(
+      title: 'Pig Wash Reminder',
+      body:
+          'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(dateTimePicked)}',
+      scheduledDate: notificationTime,
+      payload: 'wash now',
+    );
 
-      print('Scheduled notification at: $notificationTime');
-    }
+    print('Scheduled notification at: $notificationTime');
+    //  }
     return true;
   }
 
