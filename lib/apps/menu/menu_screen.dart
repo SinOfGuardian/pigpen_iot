@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pigpen_iot/custom/app_menu_tile.dart';
 import 'package:pigpen_iot/models/user_model.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:pigpen_iot/custom/app_container.dart';
 import 'package:pigpen_iot/custom/app_icon.dart';
+import 'package:pigpen_iot/custom/app_loader.dart';
 import 'package:pigpen_iot/custom/ui_appbar.dart';
 import 'package:pigpen_iot/custom/ui_avatar_icon.dart';
 import 'package:pigpen_iot/custom/ui_static_shimmer.dart';
@@ -132,6 +134,51 @@ class _ProfileOption extends ConsumerWidget {
 class _Option extends StatelessWidget {
   const _Option();
 
+  Future<void> _shareApp(BuildContext context) async {
+    // Show loader while preparing the share content
+    await showLoader(
+      context,
+      process: _performShare(context),
+    );
+  }
+
+  Future<void> _performShare(BuildContext context) async {
+    try {
+      // Customize this message with your app's details
+      const String appName = 'Pigpen IoT';
+      const String appDescription =
+          'The best IoT solution for pigpen monitoring and management';
+      const String appStoreLink =
+          'https://apps.apple.com/us/app/your-app-id'; // Replace with your iOS app link
+      const String playStoreLink =
+          'https://play.google.com/store/apps/details?id=your.package.name'; // Replace with your Android app link
+
+      final String shareText = '''
+Check out $appName - $appDescription
+
+Download now:
+iOS: $appStoreLink
+Android: $playStoreLink
+
+#PigpenIoT #SmartFarming #LivestockMonitoring
+''';
+
+      // Small delay to ensure loader is visible
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      await Share.share(
+        shareText,
+        subject: 'Check out $appName',
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to share app')),
+        );
+      }
+    }
+  }
+
   Widget _tile(String title, IconData icon, void Function()? callback) {
     return SettingTile(title: title, leadingIcon: icon, callback: callback);
   }
@@ -152,7 +199,7 @@ class _Option extends StatelessWidget {
           _tile('Theme', EvaIcons.moonOutline,
               () => context.push('/app/theme-settings')),
           _tile('Manual', EvaIcons.bookOutline, () {}),
-          _tile('Share App', EvaIcons.shareOutline, () {}),
+          _tile('Share App', EvaIcons.shareOutline, () => _shareApp(context)),
           _tile('Data Privacy', EvaIcons.lockOutline, () {}),
           _tile('Feedback', EvaIcons.messageSquareOutline,
               () => context.push('/app/feedback')),
