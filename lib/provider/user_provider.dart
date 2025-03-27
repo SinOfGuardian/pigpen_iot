@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pigpen_iot/models/user_model.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
 
-part 'user_provider.g.dart'; // Include the generated file
+part 'user_provider.g.dart';
 
 @riverpod
 Stream<PigpenUser> _pigpenUserStream(_PigpenUserStreamRef ref, String uid) {
@@ -16,78 +18,110 @@ Stream<PigpenUser> _pigpenUserStream(_PigpenUserStreamRef ref, String uid) {
     if (!snapshot.exists) {
       throw Exception('User document does not exist');
     }
-    final profile = snapshot.data()?['profile'] as Map<String, dynamic>?;
+    final data = snapshot.data();
+    if (data == null) {
+      throw Exception('Document data is null');
+    }
+    final profile = data['profile'] as Map<String, dynamic>?;
     if (profile == null) {
       throw Exception('Profile data is missing');
     }
-    return PigpenUser.fromJson(profile); // Deserialize from the "profile" field
+    return PigpenUser.fromJson(profile);
   });
 }
 
 @riverpod
 class ActiveUser extends _$ActiveUser {
+  late final StreamSubscription<PigpenUser>? _userSubscription;
+
   @override
   FutureOr<PigpenUser> build() async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate delay
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw Exception('User is not logged in');
-    return await ref.watch(_pigpenUserStreamProvider(uid).future);
+
+    // Get initial data
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+    if (!doc.exists) throw Exception('User document does not exist');
+
+    final profile = doc.data()?['profile'] as Map<String, dynamic>?;
+    if (profile == null) throw Exception('Profile data is missing');
+
+    // Set up stream listener
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .map((snap) {
+      if (!snap.exists) throw Exception('User document does not exist');
+      final data = snap.data()?['profile'] as Map<String, dynamic>?;
+      if (data == null) throw Exception('Profile data is missing');
+      return PigpenUser.fromJson(data);
+    }).listen((user) {
+      state = AsyncValue.data(user);
+    });
+
+    ref.onDispose(() {
+      _userSubscription?.cancel();
+    });
+
+    return PigpenUser.fromJson(profile);
   }
 
   Future<void> addNewUser(String email) async {
-    final date = DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now()).toString();
+    final date =
+        DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now()).toString();
     final newUser = PigpenUser(
       userId: FirebaseAuth.instance.currentUser!.uid,
       email: email,
       firstname: '',
       lastname: '',
       dateRegistered: date,
-      role: 'user', // Default role
+      role: 'user',
       things: 0,
       profileImageUrl: '',
     );
 
-    // Save user data to Firestore under the "profile" field
     await _updateUser(newUser);
   }
 
   Future<void> updateFullname(String firstname, String lastname) async {
-    final currentUser = await future; // Access the current user data
-    final newUser = currentUser.copyWith(
-      firstname: firstname,
-      lastname: lastname,
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw Exception('User is not logged in');
+
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'profile.firstname': firstname,
+      'profile.lastname': lastname,
+    });
+
+    await FirebaseAuth.instance.currentUser?.updateDisplayName(
+      '$firstname $lastname'.trim(),
     );
-
-    // Update the display name in Firebase Authentication
-    await FirebaseAuth.instance.currentUser?.updateDisplayName(firstname);
-
-    // Update the user data in Firestore
-    await _updateUser(newUser);
   }
 
   Future<void> incrementDevice() async {
-    final currentUser = await future; // Access the current user data
-    final newUser = currentUser.copyWith(things: currentUser.things + 1);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw Exception('User is not logged in');
 
-    // Update the user data in Firestore
-    await _updateUser(newUser);
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'profile.things': FieldValue.increment(1),
+    });
   }
 
   Future<void> _updateUser(PigpenUser newUser) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw Exception('User is not logged in');
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .set({
-          'profile': newUser.toJson(), // Save user data under the "profile" field
-        }, SetOptions(merge: true)); // Merge to avoid overwriting other fields
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'profile': newUser.toJson(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> deleteUser(String userId) async {
     try {
       await FirebaseFirestore.instance.collection('users').doc(userId).delete();
+      await FirebaseAuth.instance.currentUser?.delete();
     } catch (e) {
       throw Exception('Error deleting user: $e');
     }

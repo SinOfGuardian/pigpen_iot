@@ -13,6 +13,7 @@ import 'package:pigpen_iot/custom/app_textfield.dart';
 import 'package:pigpen_iot/custom/single_info.dart';
 import 'package:pigpen_iot/custom/ui_appbar.dart';
 import 'package:pigpen_iot/custom/ui_avatar_icon.dart';
+import 'package:pigpen_iot/extensions/app_snackbar.dart';
 import 'package:pigpen_iot/models/user_model.dart';
 import 'package:pigpen_iot/provider/user_provider.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
@@ -120,7 +121,7 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
                       title: 'Update Name',
                       leadingIcon: EvaIcons.editOutline,
                       callback: () => userProvider.whenData(
-                        (user) => {},
+                        (user) => _updateNameDialog(context, ref),
                       ),
                     ),
                     SettingTile(
@@ -142,6 +143,81 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _updateNameDialog(BuildContext context, WidgetRef ref) {
+    final user = ref.read(activeUserProvider).value;
+    if (user == null) return;
+
+    final firstNameController = TextEditingController(text: user.firstname);
+    final lastNameController = TextEditingController(text: user.lastname);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update Name'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _titleLabel('First Name :', context),
+            AppTextField(
+              controller: firstNameController,
+              errorText: null,
+              labelText: 'Enter First Name',
+              textInputAction: TextInputAction.next,
+              keyboardType: TextInputType.text,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+            ),
+            const SizedBox(height: 10),
+            _titleLabel('Last Name :', context),
+            AppTextField(
+              controller: lastNameController,
+              errorText: null,
+              labelText: 'Enter Last Name',
+              textInputAction: TextInputAction.done,
+              keyboardType: TextInputType.text,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final updatedFirstName = firstNameController.text.trim();
+              final updatedLastName = lastNameController.text.trim();
+
+              if (updatedFirstName.isEmpty || updatedLastName.isEmpty) {
+                context.showSnackBar('Both fields are required.',
+                    theme: SnackbarTheme.warning);
+                return;
+              }
+
+              try {
+                await ref
+                    .read(activeUserProvider.notifier)
+                    .updateFullname(updatedFirstName, updatedLastName);
+
+                if (context.mounted) {
+                  context.showSnackBar('Name Updated Successfully',
+                      theme: SnackbarTheme.success);
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  context.showSnackBar('Failed to update name: $e',
+                      theme: SnackbarTheme.error);
+                }
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
       ),
     );
   }
