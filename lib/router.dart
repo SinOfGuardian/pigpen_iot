@@ -11,6 +11,7 @@ import 'package:pigpen_iot/apps/home/devices/add_devices_viewmodel.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/viewall_schedule_view.dart';
 import 'package:pigpen_iot/apps/home/userdevices/userdevice_page_view.dart';
 import 'package:pigpen_iot/apps/intro/displayname_page.dart';
+import 'package:pigpen_iot/apps/menu/profile_screen.dart';
 import 'package:pigpen_iot/auth/login_screen.dart';
 import 'package:pigpen_iot/auth/registration/registration_view.dart';
 import 'package:pigpen_iot/auth/registration/registration_viewmodel.dart';
@@ -82,7 +83,6 @@ final GoRouter router = GoRouter(
             });
           },
         ),
-       
         GoRoute(
           path: 'user-device',
           pageBuilder: (_, state) => sharedAxisTransition(
@@ -100,6 +100,14 @@ final GoRouter router = GoRouter(
               },
             ),
           ],
+        ),
+        GoRoute(
+          path: 'profile',
+          pageBuilder: (_, state) => sharedAxisTransition(
+            state: state,
+            transitionType: TransitionType.horizontal,
+            child: const ProfileScreen(),
+          ),
         ),
       ],
     ),
@@ -137,6 +145,36 @@ final GoRouter router = GoRouter(
       path: '/welcome',
       pageBuilder: (_, state) =>
           MaterialPage<void>(key: state.pageKey, child: const SplashScreen()),
+    ),
+    GoRoute(
+      path: '/signin',
+      pageBuilder: (_, state) => sharedAxisTransition(
+        state: state,
+        transitionType: TransitionType.horizontal,
+        child: const LoginScreen(),
+      ),
+      onExit: (BuildContext context, _) {
+        if (_isSignedIn()) return true;
+        return showExitDialog(context).then((result) {
+          if (result != null && result) return true;
+          return false;
+        });
+      },
+      routes: [
+        GoRoute(
+          path: 'signup',
+          pageBuilder: (_, state) => sharedAxisTransition(
+            state: state,
+            transitionType: TransitionType.horizontal,
+            child: const RegistrationPage(),
+          ),
+          onExit: (BuildContext context, _) {
+            final ref = ProviderScope.containerOf(context);
+            ref.read(registrationProvider.notifier).clear();
+            return true;
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: '/get-to-know',
