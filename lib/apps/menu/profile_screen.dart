@@ -5,10 +5,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pigpen_iot/custom/app_button.dart';
 import 'package:pigpen_iot/custom/app_circularprogressindicator.dart';
 import 'package:pigpen_iot/custom/app_container.dart';
 import 'package:pigpen_iot/custom/app_error_handling.dart';
+import 'package:pigpen_iot/custom/app_loader.dart';
 import 'package:pigpen_iot/custom/app_menu_tile.dart';
 import 'package:pigpen_iot/custom/app_textfield.dart';
 import 'package:pigpen_iot/custom/single_info.dart';
@@ -138,7 +140,7 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
                 buttonColor: Theme.of(context).colorScheme.error,
                 icon: EvaIcons.logOutOutline,
                 width: double.infinity,
-                onPressed: () => {},
+                onPressed: () => _logoutAction(context),
                 margin: const EdgeInsets.symmetric(horizontal: 20),
               ),
             ],
@@ -350,5 +352,28 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
         );
       },
     );
+  }
+
+  //LOG OUT ACTION COMBINED WITH GOOGLE SIGN OUT
+  void _logoutAction(BuildContext context) {
+    final _auth = FirebaseAuth.instance;
+    final GoogleSignIn _googleSignIn = GoogleSignIn();
+    showLoader(context, process: isConnected(true, context))
+        .then((result) async {
+      if (result == null || !result) return;
+      await FirebaseAuth.instance.signOut().timeout(const Duration(seconds: 5));
+      await GoogleSignIn().signOut().timeout(const Duration(seconds: 5));
+      //HERE THE GOOGLE SIGN OUT THIS TRY CATCH
+      try {
+        await _auth.signOut();
+        if (await _googleSignIn.isSignedIn()) {
+          await _googleSignIn.signOut();
+          if (FirebaseAuth.instance.currentUser != null) return;
+        }
+      } catch (e) {
+        print('Error during sign-out: $e');
+      }
+      if (context.mounted) context.go('/signin');
+    });
   }
 }
