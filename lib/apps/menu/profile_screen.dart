@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -127,7 +128,7 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
                     SettingTile(
                       title: 'Change Password',
                       leadingIcon: EvaIcons.lockOutline,
-                      callback: () => {},
+                      callback: () => _updateChangePasswordDialog(context, ref),
                     ),
                   ],
                 ),
@@ -219,6 +220,135 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
           ),
         ],
       ),
+    );
+  }
+
+  void _updateChangePasswordDialog(BuildContext context, WidgetRef ref) {
+    final TextEditingController currentPasswordController =
+        TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        bool isCurrentPasswordVisible = false;
+        bool isNewPasswordVisible = false;
+        bool isConfirmPasswordVisible = false;
+
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.6,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _titleLabel('Change Password', context),
+                    const SizedBox(height: 20),
+                    AppTextField(
+                      labelText: 'Enter Current Password',
+                      controller: currentPasswordController,
+                      errorText: null,
+                      obscureText: !isCurrentPasswordVisible,
+                      textInputAction: TextInputAction.next,
+                      suffixIconData: isCurrentPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      onSuffixIconTapped: () {
+                        setState(() {
+                          isCurrentPasswordVisible = !isCurrentPasswordVisible;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    AppTextField(
+                      labelText: 'Enter New Password',
+                      controller: newPasswordController,
+                      errorText: null,
+                      obscureText: !isNewPasswordVisible,
+                      textInputAction: TextInputAction.next,
+                      suffixIconData: isNewPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      onSuffixIconTapped: () {
+                        setState(() {
+                          isNewPasswordVisible = !isNewPasswordVisible;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    AppTextField(
+                      labelText: 'Confirm New Password',
+                      controller: confirmPasswordController,
+                      errorText: null,
+                      obscureText: !isConfirmPasswordVisible,
+                      textInputAction: TextInputAction.done,
+                      suffixIconData: isConfirmPasswordVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                      onSuffixIconTapped: () {
+                        setState(() {
+                          isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final currentPassword = currentPasswordController.text.trim();
+                  final newPassword = newPasswordController.text.trim();
+                  final confirmPassword = confirmPasswordController.text.trim();
+
+                  if (currentPassword.isEmpty ||
+                      newPassword.isEmpty ||
+                      confirmPassword.isEmpty) {
+                    context.showSnackBar('All fields are required.',
+                        theme: SnackbarTheme.warning);
+                    return;
+                  }
+
+                  if (newPassword != confirmPassword) {
+                    context.showSnackBar('Passwords do not match.',
+                        theme: SnackbarTheme.warning);
+                    return;
+                  }
+
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    final credential = EmailAuthProvider.credential(
+                      email: user!.email!,
+                      password: currentPassword,
+                    );
+
+                    await user.reauthenticateWithCredential(credential);
+                    await user.updatePassword(newPassword);
+
+                    Navigator.pop(context);
+
+                    context.showSnackBar('Password updated successfully.',
+                        theme: SnackbarTheme.success);
+                  } catch (error) {
+                    context.showSnackBar('Error updating password: $error',
+                        theme: SnackbarTheme.error);
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
