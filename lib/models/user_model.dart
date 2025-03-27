@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pigpen_iot/modules/string_extensions.dart';
 
 class PigpenUser {
   final String userId;
@@ -9,6 +10,10 @@ class PigpenUser {
   final String role;
   final int things;
   final String profileImageUrl;
+
+  String get fullname {
+    return '${firstname.toCapitalizeFirst()} ${lastname.toTitleCase()}';
+  }
 
   PigpenUser({
     required this.userId,

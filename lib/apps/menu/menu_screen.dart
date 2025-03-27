@@ -36,7 +36,7 @@ class _ProfileOption extends ConsumerWidget {
   const _ProfileOption();
 
   void _onTapped(BuildContext context) {
-    context.push('/app/profile');
+    context.push('/home/profile');
   }
 
   Widget _shimmer(BuildContext context) {
