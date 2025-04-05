@@ -51,7 +51,7 @@ class Login extends _$Login {
 
       return userCredential;
     } catch (e) {
-      print('Error during Google Sign-In: $e');
+      print('Error during Google Sign-In:  $e');
       return null;
     }
   }

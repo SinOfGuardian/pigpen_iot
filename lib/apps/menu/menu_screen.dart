@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pigpen_iot/custom/app_menu_tile.dart';
 import 'package:pigpen_iot/models/user_model.dart';
+import 'package:pigpen_iot/services/internet_connection.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:pigpen_iot/custom/app_container.dart';
 import 'package:pigpen_iot/custom/app_icon.dart';
@@ -94,7 +95,7 @@ class _ProfileOption extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user.firstname + ' ' + user.lastname,
+                      Text('${user.firstname} ${user.lastname}',
                           style: title,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1),
@@ -131,7 +132,7 @@ class _ProfileOption extends ConsumerWidget {
   }
 }
 
-class _Option extends StatelessWidget {
+class _Option extends StatelessWidget with InternetConnection {
   const _Option();
 
   Future<void> _shareApp(BuildContext context) async {
@@ -153,7 +154,7 @@ class _Option extends StatelessWidget {
       const String playStoreLink =
           'https://play.google.com/store/apps/details?id=your.package.name'; // Replace with your Android app link
 
-      final String shareText = '''
+      const String shareText = '''
 Check out $appName - $appDescription
 
 Download now:
@@ -205,6 +206,8 @@ Android: $playStoreLink
               () => context.push('/app/feedback')),
           _tile(
               'About', EvaIcons.infoOutline, () => context.push('/app/about')),
+          // _tile(
+          //     'Log out', EvaIcons.logOutOutline, () => logoutAction(context)),
         ]),
       ),
       const AppContainer(

@@ -35,14 +35,14 @@ dependencies:
   riverpod_annotation: ^2.2.0
 
   # SERVICES
-  internet_connection_checker: ^1.0.0+1
+  internet_connection_checker: ^3.0.1
   flutter_local_notifications: ^19.0.0
 
   #Firebase
-  firebase_core: ^2.15.1
-  firebase_auth: ^4.8.0
-  cloud_firestore: ^4.17.5
-  firebase_database: ^10.5.7
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: 5.6.6
+  firebase_database: ^11.1.4
 
   #Google
   google_sign_in: ^6.2.2
@@ -64,7 +64,7 @@ dependencies:
   blobs: ^2.0.0
   timezone: ^0.10.0
   permission_handler: ^11.4.0
-  fl_chart: ^0.69.0
+  fl_chart: ^0.70.2
   share_plus: ^10.1.4
 
 dev_dependencies:
@@ -75,7 +75,7 @@ dev_dependencies:
   #Router
   build_runner: ^2.4.5
   riverpod_generator: ^2.2.0
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 flutter_launcher_icons:
   android: "launcher_icon"

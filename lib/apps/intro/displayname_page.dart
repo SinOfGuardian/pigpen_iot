@@ -159,6 +159,7 @@ class _DisplayNameState extends ConsumerState<DisplayName>
                       onPressed: () => enterAction(context),
                     ),
                   ),
+                  // @Enter Button
                 ],
               ),
             ),

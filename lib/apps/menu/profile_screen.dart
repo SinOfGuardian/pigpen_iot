@@ -57,9 +57,9 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
       int flex2 = 1}) {
     return Row(
       children: [
-        Expanded(child: _singleData(label: label1, value: value1), flex: flex1),
+        Expanded(flex: flex1, child: _singleData(label: label1, value: value1)),
         const SizedBox(width: 10),
-        Expanded(child: _singleData(label: label2, value: value2), flex: flex2),
+        Expanded(flex: flex2, child: _singleData(label: label2, value: value2)),
       ],
     );
   }
@@ -356,8 +356,8 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
 
   //LOG OUT ACTION COMBINED WITH GOOGLE SIGN OUT
   void _logoutAction(BuildContext context) {
-    final _auth = FirebaseAuth.instance;
-    final GoogleSignIn _googleSignIn = GoogleSignIn();
+    final auth = FirebaseAuth.instance;
+    final GoogleSignIn googleSignIn = GoogleSignIn();
     showLoader(context, process: isConnected(true, context))
         .then((result) async {
       if (result == null || !result) return;
@@ -365,9 +365,9 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
       await GoogleSignIn().signOut().timeout(const Duration(seconds: 5));
       //HERE THE GOOGLE SIGN OUT THIS TRY CATCH
       try {
-        await _auth.signOut();
-        if (await _googleSignIn.isSignedIn()) {
-          await _googleSignIn.signOut();
+        await auth.signOut();
+        if (await googleSignIn.isSignedIn()) {
+          await googleSignIn.signOut();
           if (FirebaseAuth.instance.currentUser != null) return;
         }
       } catch (e) {

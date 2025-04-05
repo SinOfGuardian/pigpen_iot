@@ -22,7 +22,7 @@ mixin InternetConnection {
   }
 
   Future<bool> isConnected([bool showSnackbar = false, BuildContext? context]) async {
-    return InternetConnectionChecker().hasConnection.then((value) {
+    return InternetConnectionChecker.instance.hasConnection.then((value) {
       if (!value && showSnackbar && context != null && context.mounted) {
         context.showSnackBar(kNoInternet, theme: SnackbarTheme.error);
       }
@@ -30,3 +30,4 @@ mixin InternetConnection {
     });
   }
 }
+

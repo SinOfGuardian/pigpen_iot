@@ -29,14 +29,16 @@ class RegistrationPage extends ConsumerWidget with InternetConnection {
         return ref
             .read(registrationProvider.notifier)
             .registerUser()
-            .catchError((error) {
-          if (!context.mounted) return null;
-          onError(error as FirebaseException, context, ref);
-          return null;
-        });
+            .catchError(
+          (error) {
+            if (!context.mounted) return null;
+            onError(error as FirebaseException, context, ref);
+            return null;
+          },
+        );
       }),
     ).then((result) {
-      if (result == null || result == false) return;
+      if (result == null) return;
       if (context.mounted) context.go('/get-to-know');
     });
   }

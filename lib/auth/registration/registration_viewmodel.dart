@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:pigpen_iot/provider/user_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -39,27 +40,27 @@ class Registration extends _$Registration {
           .createUserWithEmailAndPassword(email: email, password: password)
           .timeout(const Duration(seconds: 5));
 
+      debugPrint("User registered: ${credential.user?.uid}");
       if (credential.user == null || credential.user?.email == null) {
         return null;
       }
 
       // Save user data to Firestore
-      // await _firestore.collection('users').doc(credential.user!.uid).set({
+      // await _firestore.collection('users').doc(credential.usser!.uid).set({
       //   'email': email,
       //   'createdAt': DateTime.now(),
       // });
 
       // Save user data to Firestore
       await ref.read(activeUserProvider.notifier).addNewUser(email);
-
-      // Update the active user in the app
-      //await ref.read(activeUserProvider.notifier).addNewUser(email);
-
       return credential.user;
     } catch (e) {
       // Handle errors (e.g., display a snackbar)
-      rethrow;
+      debugPrint(e.toString());
+
+      // rethrow;
     }
+    return null;
   }
 }
 

@@ -37,7 +37,7 @@ class AvatarIcon extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
 
-    TextStyle? style = null;
+    TextStyle? style;
     if (_size == _kProfileSmall) {
       style = textTheme.headlineLarge?.copyWith(color: colorScheme.primary);
     } else if (_size == _kProfileBig) {
