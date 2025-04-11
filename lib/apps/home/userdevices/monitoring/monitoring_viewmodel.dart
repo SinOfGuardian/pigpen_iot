@@ -21,18 +21,18 @@ class GraphNotifier extends StateNotifier<GraphData> {
   final Sensor sensor;
   GraphNotifier({required this.sensor})
       : super(GraphData(
-          data: 0,
+          data: sensor == gasSensor ? 0.0 : 0,
           sensor: sensor,
           minY: sensor.min,
           maxY: sensor.max,
           arrayOfData: const [],
-          lowest: 0,
-          highest: 0,
+          lowest: sensor == gasSensor ? 0.0 : 0, // Handle both types
+          highest: sensor == gasSensor ? 0.0 : 0, // Handle both types
         ));
 
-  final _stackOfData = GenericStack<int>();
+  final _stackOfData = GenericStack<num>();
 
-  void update(int newValue) {
+  void update(num newValue) {
     final oldData = state.arrayOfData.toList();
     final newData = _getArrayOfData(newValue);
     if (listEquals(oldData, newData) && oldData.length == 21) return;
@@ -47,7 +47,7 @@ class GraphNotifier extends StateNotifier<GraphData> {
     );
   }
 
-  double _getMinY(int data) {
+  double _getMinY(num data) {
     final lowest = _stackOfData.peekLowest?.toDouble();
     if (lowest == null) return sensor.min;
 
@@ -63,7 +63,7 @@ class GraphNotifier extends StateNotifier<GraphData> {
     return -1;
   }
 
-  double _getMaxY(int data) {
+  double _getMaxY(num data) {
     final highest = _stackOfData.peekHighest?.toDouble();
     if (highest == null) return sensor.max;
 
@@ -79,21 +79,30 @@ class GraphNotifier extends StateNotifier<GraphData> {
     return 1;
   }
 
-  int _getHighest() {
+  num _getHighest() {
     final highest = _stackOfData.peekHighest;
     if (highest == null) return 0;
     return highest;
   }
 
-  int _getLowest() {
+  num _getLowest() {
     final lowest = _stackOfData.peekLowest;
     if (lowest == null) return 0;
     return lowest;
   }
 
-  List<int> _getArrayOfData(int data) {
+  List<num> _getArrayOfData(num data) {
     if (_stackOfData.length == 21) _stackOfData.pop();
     _stackOfData.push(data);
     return _stackOfData.getList;
   }
+}
+
+// In your viewmodel, consider adding this to prevent unnecessary rebuilds
+@override
+bool updateShouldNotify(GraphData old, GraphData newData) {
+  return !listEquals(old.arrayOfData, newData.arrayOfData) ||
+      old.data != newData.data ||
+      old.highest != newData.highest ||
+      old.lowest != newData.lowest;
 }

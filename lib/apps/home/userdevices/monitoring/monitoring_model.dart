@@ -5,7 +5,7 @@ import 'package:pigpen_iot/modules/mycolors.dart';
 class DeviceData {
   final int temperature;
   final int humidity;
-  final int gasDetection;
+  final double gasDetection;
   final int waterLevel;
 
   const DeviceData({
@@ -23,7 +23,7 @@ class DeviceData {
     return DeviceData(
       temperature: json['temperature'] as int? ?? 0,
       humidity: json['humidity'] as int? ?? 0,
-      gasDetection: json['gas_detection'] as int? ?? 0,
+      gasDetection: (json['gas_detection'] as num?)?.toDouble() ?? 0,
       waterLevel: json['water_level'] as int? ?? 0,
     );
   }
@@ -102,9 +102,9 @@ const nextWatering = Sensor(
 @immutable
 class GraphData {
   final Sensor sensor;
-  final int data, highest, lowest;
+  final num data, highest, lowest;
   final double minY, maxY;
-  final List<int> arrayOfData;
+  final List<num> arrayOfData;
 
   const GraphData({
     required this.sensor,
@@ -118,12 +118,12 @@ class GraphData {
 
   GraphData copyWith({
     Sensor? sensor,
-    int? data,
-    int? highest,
-    int? lowest,
+    num? data,
+    num? highest,
+    num? lowest,
     double? minY,
     double? maxY,
-    List<int>? arrayOfData,
+    List<num>? arrayOfData,
   }) {
     return GraphData(
       arrayOfData: arrayOfData ?? this.arrayOfData,

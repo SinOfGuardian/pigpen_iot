@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:intl/intl.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
-  // Function to trigger a test notification
-  Future<void> _triggerTestNotification() async {
+  Future<void> _showNotification() async {
     try {
+      await NotificationService.init();
+
+      // Get current time in local timezone
+      final now = tz.TZDateTime.now(tz.local);
+      final scheduledTime =
+          now.add(const Duration(hours: 8, minutes: 0, seconds: 5));
+
+      // Format for display
+      final formattedTime =
+          DateFormat('yyyy-MM-dd hh:mm a').format(scheduledTime);
+      debugPrint('Notification scheduled at $formattedTime (local time)');
+
       await NotificationService.scheduleNotification(
-        //deviceId: 'test_device_id', // Replace with a test device ID
-        title: 'Test Notification', // Title of the notification
-        body: 'This is a test notification!', // Body of the notification
-        scheduledDate: tz.TZDateTime.now(tz.local)
-            .add(const Duration(seconds: 1)), // 5 seconds from now
-        payload: 'test_payload', // Optional payload
+        title: 'PigPen Alert',
+        body: 'Hello from PigPen! Scheduled at $formattedTime',
+        scheduledDate: scheduledTime,
       );
     } catch (e) {
-      print('Failed to trigger test notification: $e');
+      debugPrint('Error showing notification: $e');
     }
   }
 
@@ -25,23 +34,18 @@ class NotificationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notification Screen'),
+        title: const Text('Simple Notifications'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Notification Screen',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed:
-                  _triggerTestNotification, // Trigger the test notification
-              child: const Text('Trigger Test Notification'),
-            ),
-          ],
+        child: ElevatedButton(
+          onPressed: _showNotification,
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+          ),
+          child: const Text(
+            'Show Notification',
+            style: TextStyle(fontSize: 18),
+          ),
         ),
       ),
     );

@@ -156,8 +156,8 @@ class BottomSection extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child:
-                      _DataField(sensor: gasSensor, data: device.gasDetection),
+                  child: _DataField(
+                      sensor: gasSensor, data: device.gasDetection.toDouble()),
                 ),
                 const SizedBox(width: 16), // Add spacing between columns
                 Expanded(
@@ -203,13 +203,13 @@ class BottomSection extends ConsumerWidget {
 }
 
 class _DataField extends StatelessWidget {
-  final int? data;
+  final num? data;
   final Sensor sensor;
   final String? stringData;
   const _DataField({required this.data, this.stringData, required this.sensor});
 
   // Helper function for gas level declaration
-  String _getGasLevelDeclaration(int? ppm) {
+  String _getGasLevelDeclaration(num? ppm) {
     if (ppm == null) return '';
     if (ppm <= 10) return ' - Low';
     if (ppm <= 25) return ' - Moderate';
@@ -218,7 +218,7 @@ class _DataField extends StatelessWidget {
   }
 
   // Helper function for temperature declaration
-  String _getTemperatureDeclaration(int? temp) {
+  String _getTemperatureDeclaration(num? temp) {
     if (temp == null) return '';
     if (temp <= 10) return ' - Cold';
     if (temp <= 25) return ' - Comfortable';
@@ -227,7 +227,7 @@ class _DataField extends StatelessWidget {
   }
 
   // Helper function for humidity declaration
-  String _getHumidityDeclaration(int? humidity) {
+  String _getHumidityDeclaration(num? humidity) {
     if (humidity == null) return '';
     if (humidity <= 30) return ' - Dry';
     if (humidity <= 60) return ' - Comfortable';
@@ -235,7 +235,7 @@ class _DataField extends StatelessWidget {
   }
 
   // Helper function for water level declaration
-  String _getWaterLevelDeclaration(int? waterLevel) {
+  String _getWaterLevelDeclaration(num? waterLevel) {
     if (waterLevel == null) return '';
     if (waterLevel <= 20) return ' - Low';
     if (waterLevel <= 50) return ' - Moderate';

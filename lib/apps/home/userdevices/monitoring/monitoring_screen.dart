@@ -62,7 +62,8 @@ class _GraphsSection extends ConsumerStatefulWidget {
 class _GraphsSectionState extends ConsumerState<_GraphsSection>
     with AutomaticKeepAliveClientMixin {
   late final Timer timer;
-  int tempVal = 0, humidVal = 0, gasVal = 0, waterVal = 0;
+  int tempVal = 0, humidVal = 0, waterVal = 0;
+  double gasVal = 0.0;
 
   @override
   bool get wantKeepAlive => true;
@@ -139,21 +140,19 @@ class _SingleGraph extends ConsumerWidget {
   final TextStyle labelTextStyle =
       const TextStyle(color: Colors.grey, fontSize: 10);
 
-  List<FlSpot> convertListToSpots(List<int> list) {
+  List<FlSpot> convertListToSpots(List<num> list) {
     return list.asMap().entries.map((e) {
       return FlSpot(e.key.toDouble(), e.value.toDouble());
     }).toList();
   }
 
-  Widget _minMaxIndicator(int highest, int lowest) {
+  Widget _minMaxIndicator(num highest, num lowest) {
     return Row(
       children: [
-        // const Text('H'),
         const SizedBox(
             width: 18, child: Icon(Icons.arrow_drop_up_rounded, size: 20)),
         Text(highest.toString(), style: const TextStyle(fontSize: 12)),
         const SizedBox(width: 5),
-        // const Text('L'),
         const SizedBox(
             width: 18, child: Icon(Icons.arrow_drop_down_rounded, size: 20)),
         Text(lowest.toString(), style: const TextStyle(fontSize: 12)),
@@ -201,10 +200,14 @@ class _SingleGraph extends ConsumerWidget {
 
     if (value == minX || value == maxX) text = (value * 3).toInt().toString();
     return SideTitleWidget(
-        axisSide: meta.axisSide, child: Text(text, style: labelTextStyle));
+      meta: meta,
+      space: 4,
+      child: Text(text, style: labelTextStyle),
+    );
   }
 
-  Text _leftIndicator(double value, TitleMeta meta, GraphData graphData) {
+  SideTitleWidget _leftIndicator(
+      double value, TitleMeta meta, GraphData graphData) {
     final minY = graphData.minY;
     final maxY = graphData.maxY;
     final newValue = '${value.toInt()}${graphData.sensor.suffix}';
@@ -213,11 +216,19 @@ class _SingleGraph extends ConsumerWidget {
     if (value == minY || value == ((maxY - minY) / 2) + minY || value == maxY) {
       text = newValue;
     } else if (value.toInt() == graphData.data.toInt()) {
-      return Text('~',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: graphData.sensor.lineColor, fontSize: 16));
+      return SideTitleWidget(
+        space: 4,
+        meta: meta,
+        child: Text('~',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: graphData.sensor.lineColor, fontSize: 16)),
+      );
     }
-    return Text(text, style: labelTextStyle);
+    return SideTitleWidget(
+      meta: meta,
+      space: 4,
+      child: Text(text, style: labelTextStyle),
+    );
   }
 
   double getHorizontalInterval(double minY, double maxY) {
@@ -250,7 +261,7 @@ class _SingleGraph extends ConsumerWidget {
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 35,
+            reservedSize: 40,
             interval: 1,
             getTitlesWidget: (value, meta) =>
                 _leftIndicator(value, meta, graphData),
@@ -259,9 +270,9 @@ class _SingleGraph extends ConsumerWidget {
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            reservedSize: 20,
+            reservedSize: 22,
             interval: 1,
-            getTitlesWidget: _bottomIndicator,
+            getTitlesWidget: (value, meta) => _bottomIndicator(value, meta),
           ),
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -277,7 +288,6 @@ class _SingleGraph extends ConsumerWidget {
       maxX: 20,
       minY: graphData.minY,
       maxY: graphData.maxY,
-      clipData: const FlClipData.vertical(),
       lineBarsData: [
         LineChartBarData(
           spots: spots,
@@ -310,8 +320,6 @@ class _SingleGraph extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final graphData = ref.watch(provider);
-    print('Water Level Data: ${graphData.arrayOfData}'); // Debug print
-    print('Water Level Color: ${graphData.sensor.lineColor}'); // Debug print
 
     return RepaintBoundary(
       child: AspectRatio(
@@ -330,7 +338,7 @@ class _SingleGraph extends ConsumerWidget {
                 curve: Curves.easeInSine,
                 duration: const Duration(milliseconds: 300),
               ),
-            ), // cont
+            ),
           ],
         ),
       ),

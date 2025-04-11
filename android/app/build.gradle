@@ -33,15 +33,16 @@ if (flutterVersionName == null) {
 android {
     namespace = "com.example.pigpen_iot"
     compileSdk = 35 // Update to the latest compileSdkVersion
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = '17'
     }
 
     defaultConfig {
@@ -85,7 +86,8 @@ flutter {
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:32.7.0') // Use the latest Firebase BOM version
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    implementation platform('com.google.firebase:firebase-bom:33.0.0') // 2025 BOM
     implementation 'com.google.firebase:firebase-analytics' // Firebase Analytics
     implementation 'com.android.support:multidex:2.0.1' // Multidex support
     implementation 'androidx.work:work-runtime:2.8.1' // WorkManager for background tasks

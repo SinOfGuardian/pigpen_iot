@@ -1,0 +1,1 @@
+C:\flutter Project\pigpen_iot\build\app\intermediates\cxx\Debug\6y604v3t\obj\armeabi-v7a
