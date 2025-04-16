@@ -5,26 +5,37 @@ import 'package:pigpen_iot/modules/mycolors.dart';
 class DeviceData {
   final int temperature;
   final int humidity;
+  final int heatIndex;
   final double gasDetection;
-  final int waterLevel;
+  final int drinklerwaterLevel;
+  final int drumwaterLevel;
 
   const DeviceData({
     required this.temperature,
     required this.humidity,
+    required this.heatIndex,
     required this.gasDetection,
-    required this.waterLevel,
+    required this.drinklerwaterLevel,
+    required this.drumwaterLevel,
   });
 
   factory DeviceData.fromJson(Map<Object?, Object?>? json) {
     if (json == null) {
       return const DeviceData(
-          temperature: 0, humidity: 0, gasDetection: 0, waterLevel: 0);
+          temperature: 0,
+          humidity: 0,
+          heatIndex: 0,
+          gasDetection: 0,
+          drinklerwaterLevel: 0,
+          drumwaterLevel: 0);
     }
     return DeviceData(
       temperature: json['temperature'] as int? ?? 0,
       humidity: json['humidity'] as int? ?? 0,
+      heatIndex: json['heat_index'] as int? ?? 0,
       gasDetection: (json['gas_detection'] as num?)?.toDouble() ?? 0,
-      waterLevel: json['water_level'] as int? ?? 0,
+      drinklerwaterLevel: json['drinkler_water_level'] as int? ?? 0,
+      drumwaterLevel: json['drum_water_level'] as int? ?? 0,
     );
   }
 }
@@ -69,6 +80,16 @@ const humidSensor = Sensor(
       'it would water.',
 );
 
+const heatIndexSensor = Sensor(
+  title: 'heat index',
+  suffix: '°C',
+  min: 0,
+  max: 60,
+  lineColor: Colors.red,
+  noteMessage: 'The heat index is a measure of how hot it really feels when '
+      'relative humidity is factored in with the actual air temperature.',
+);
+
 const gasSensor = Sensor(
     title: 'Ammonia',
     suffix: ' ppm',
@@ -80,14 +101,22 @@ const gasSensor = Sensor(
     // 'soil particles, known as pore spaces. The higher the soil moisture, ',
     );
 
-const waterSensor = Sensor(
-  title: 'water level',
-  suffix: '%',
+const drinklerwaterSensor = Sensor(
+  title: 'drink water level',
+  suffix: '',
   min: 0,
-  max: 100,
+  max: 1,
   lineColor: Colors.purple,
-  noteMessage: 'It works by sensing changes in conductivity or resistance '
-      'when it comes into contact with water. ',
+  noteMessage: 'Drinking water presence detection',
+);
+
+const drumwaterSensor = Sensor(
+  title: 'drum water level',
+  suffix: '',
+  min: 0,
+  max: 1,
+  lineColor: Colors.green,
+  noteMessage: 'Drum water presence detection',
 );
 
 const nextWatering = Sensor(

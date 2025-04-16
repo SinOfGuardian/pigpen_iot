@@ -1,5 +1,11 @@
 {
   "java.configuration.updateBuildConfiguration": "automatic",
   "cmake.ignoreCMakeListsMissing": true,
-  "cSpell.words": ["Localnotification"]
+  "cSpell.words": [
+    "drinkler",
+    "drinklerwater",
+    "drumwater",
+    "heatindex",
+    "Localnotification"
+  ]
 }

@@ -6,7 +6,6 @@ import 'package:flutter/widgets.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
 import 'package:pigpen_iot/services/internet_connection.dart';
 
-
 // ignore: constant_identifier_names
 const Duration TIMEOUT_TIME = Duration(seconds: 5);
 // ignore: constant_identifier_names
@@ -14,15 +13,13 @@ const String TIMEOUT_MESSAGE = 'The operation has timeout';
 
 class DeviceFirebase {
   final _database = FirebaseDatabase.instance;
-  final _path = '/realtime/devices/';
+  final _path = '/realtime/devices';
 
   Stream<DeviceData> deviceStream(String deviceId) {
-    return _database.ref(_path).child(deviceId).onValue.map(
-        (user) => DeviceData.fromJson(user.snapshot.value as Map<Object?, Object?>?));
+    return _database.ref('$_path/$deviceId/readings').onValue.map((event) =>
+        DeviceData.fromJson(event.snapshot.value as Map<Object?, Object?>?));
   }
 }
-
-
 
 class ScheduleOperations with InternetConnection {
   final database = FirebaseDatabase.instance;
@@ -40,7 +37,6 @@ class ScheduleOperations with InternetConnection {
     return database.ref(path).child(deviceId).orderByValue().onValue;
   }
 
-
   Future<void> uploadSchedule(String deviceId, DateTime dateTimePicked) async {
     // final key = database.ref(path).child(deviceId).push().key;
     // return database.ref(path).child(deviceId).update({
@@ -55,11 +51,15 @@ class ScheduleOperations with InternetConnection {
       print('Error uploading schedule: $e');
       // Optionally, show an alert or handle the error appropriately
     }
-
   }
 
-  Future<void> overwriteSchedules(String deviceId, Map<Object?, Object?> schedules) {
-    return database.ref(path).child(deviceId).set(schedules).timeout(TIMEOUT_TIME);
+  Future<void> overwriteSchedules(
+      String deviceId, Map<Object?, Object?> schedules) {
+    return database
+        .ref(path)
+        .child(deviceId)
+        .set(schedules)
+        .timeout(TIMEOUT_TIME);
   }
 
   Future<void> deleteSchedule(String deviceId, String databaseKey) async {
@@ -169,8 +169,9 @@ class AuthOperations with InternetConnection {
       TextEditingController email, TextEditingController password) async {
     // if (!await isConnected()) throw TimeoutException(TIMEOUT_MESSAGE);
     try {
-      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email.text.trim(), password: password.text.trim());
+      final userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+              email: email.text.trim(), password: password.text.trim());
       return userCredential.user;
     } on FirebaseAuthException catch (e) {
       authException(e);

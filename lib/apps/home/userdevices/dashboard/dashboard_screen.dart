@@ -138,40 +138,59 @@ class BottomSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // First Row: Two columns for Temperature and Humidity
-            Row(
-              children: [
-                Expanded(
-                  child:
-                      _DataField(sensor: tempSensor, data: device.temperature),
-                ),
-                const SizedBox(width: 10), // Add spacing between columns
-                Expanded(
-                  child: _DataField(sensor: humidSensor, data: device.humidity),
-                ),
-              ],
-            ),
-            const SizedBox(height: 5), // Add spacing between rows
-            // Second Row: Two columns for Soil Moisture and an empty space
+            // 🟡 Row 1: Heat Index + Ammonia (Gas Detection)
             Row(
               children: [
                 Expanded(
                   child: _DataField(
-                      sensor: gasSensor, data: device.gasDetection.toDouble()),
+                      sensor: heatIndexSensor, data: device.heatIndex),
                 ),
-                const SizedBox(width: 16), // Add spacing between columns
+                const SizedBox(width: 10),
                 Expanded(
-                  child:
-                      _DataField(sensor: waterSensor, data: device.waterLevel),
+                  child: _DataField(
+                      sensor: gasSensor, data: device.gasDetection.toDouble()),
                 ),
               ],
             ),
-            const SizedBox(height: 16), // Add spacing between rows
-            // Third Row: Full width for Next Watering
-            _DataField(
-              sensor: nextWatering,
-              data: null,
-              stringData: nextSchedule?.toString() ?? 'No schedule',
+            const SizedBox(height: 5),
+            // 🔵 Row 2: Drum Water Level + Drinkler Water Level
+            Row(
+              children: [
+                Expanded(
+                  child: _DataField(
+                      sensor: drumwaterSensor, data: device.drumwaterLevel),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _DataField(
+                      sensor: drinklerwaterSensor,
+                      data: device.drinklerwaterLevel),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // ✅ Next Watering + Manual Toggle
+            Row(
+              children: [
+                Expanded(
+                  child: _DataField(
+                    sensor: nextWatering,
+                    data: null,
+                    stringData: nextSchedule?.toString() ?? 'No schedule',
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  "Manual Watering",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                Switch(
+                  value: false,
+                  onChanged: (value) async {
+                    // Handle switch change
+                  },
+                ),
+              ],
             ),
           ],
         );
@@ -208,7 +227,7 @@ class _DataField extends StatelessWidget {
   final String? stringData;
   const _DataField({required this.data, this.stringData, required this.sensor});
 
-  // Helper function for gas level declaration
+  // Helper functions for status declarations
   String _getGasLevelDeclaration(num? ppm) {
     if (ppm == null) return '';
     if (ppm <= 10) return ' - Low';
@@ -217,7 +236,6 @@ class _DataField extends StatelessWidget {
     return ' - Very High';
   }
 
-  // Helper function for temperature declaration
   String _getTemperatureDeclaration(num? temp) {
     if (temp == null) return '';
     if (temp <= 10) return ' - Cold';
@@ -226,7 +244,6 @@ class _DataField extends StatelessWidget {
     return ' - Hot';
   }
 
-  // Helper function for humidity declaration
   String _getHumidityDeclaration(num? humidity) {
     if (humidity == null) return '';
     if (humidity <= 30) return ' - Dry';
@@ -234,77 +251,121 @@ class _DataField extends StatelessWidget {
     return ' - Humid';
   }
 
-  // Helper function for water level declaration
-  String _getWaterLevelDeclaration(num? waterLevel) {
-    if (waterLevel == null) return '';
-    if (waterLevel <= 20) return ' - Low';
-    if (waterLevel <= 50) return ' - Moderate';
-    if (waterLevel <= 80) return ' - High';
-    return ' - Very High';
+  String _getHeatIndexStatus(num? heatIndex) {
+    if (heatIndex == null) return '';
+    if (heatIndex < 25) return ' - Safe';
+    if (heatIndex < 28) return ' - Warning';
+    if (heatIndex < 32) return ' - Danger';
+    return ' - Emergency';
   }
 
-  // Function to trigger notifications based on sensor data
+  String _getDrumWaterLevelDeclaration(num? waterLevel) {
+    if (waterLevel == null) return '- Unknown';
+    return waterLevel == 1 ? ' - Water Drum Present' : ' - Empty';
+  }
+
+  String _getDrinklerWaterLevelDeclaration(num? waterLevel) {
+    if (waterLevel == null) return '- Unknown';
+    return waterLevel == 1 ? ' - Water Drinkler Present' : ' - Empty';
+  }
+
+  // Improved notification logic
   void _checkAndTriggerNotification(BuildContext context, WidgetRef ref) {
     if (data == null) return;
 
     final notificationState = ref.read(notificationStateProvider);
     final sensorKey = sensor.title;
-
+    bool shouldNotify = false;
     String notificationTitle = '';
     String notificationBody = '';
 
     switch (sensor) {
       case gasSensor:
-        if (data! > 50 && !(notificationState[sensorKey] ?? false)) {
-          notificationTitle = 'High Ammonia Level Detected!';
-          notificationBody = 'Ammonia level is very high ($data ppm).';
-          ref.read(notificationStateProvider.notifier).state = {
-            ...notificationState,
-            sensorKey: true,
-          };
+        if (data! > 50) {
+          notificationTitle = '⚠️ High Ammonia Level!';
+          notificationBody =
+              'Ammonia level is very high (${data!.toStringAsFixed(1)} ppm).';
+          shouldNotify = true;
         }
         break;
+
+      case heatIndexSensor:
+        if (data! >= 32) {
+          notificationTitle = '🚨 Heat Emergency!';
+          notificationBody =
+              'Heat index is dangerously high (${data!.toStringAsFixed(1)}°C).';
+          shouldNotify = true;
+        } else if (data! >= 28 && !(notificationState[sensorKey] ?? false)) {
+          notificationTitle = '⚠️ Heat Warning!';
+          notificationBody =
+              'Heat index is high (${data!.toStringAsFixed(1)}°C).';
+          shouldNotify = true;
+        }
+        break;
+
+      case drumwaterSensor:
+        if (data == 0) {
+          notificationTitle = '🚰 Drum Water Empty';
+          notificationBody = 'Drum water level is low. Please refill the drum.';
+          shouldNotify = true;
+        }
+        break;
+
+      case drinklerwaterSensor:
+        final drumLevel = ref.watch(deviceStreamProvider).maybeWhen(
+            data: (device) => device.drumwaterLevel, orElse: () => null);
+
+        if (data == 0) {
+          if (drumLevel == 1) {
+            notificationTitle = '💧 Drink Water Auto Refill';
+            notificationBody =
+                'Drink water level is low. Activating automatic refill from drum.';
+          } else {
+            notificationTitle = '❗ Refill Drum First';
+            notificationBody =
+                'Drink water is low, but drum is also empty. Please refill drum before auto refill.';
+          }
+          shouldNotify = true;
+        }
+        break;
+
       case tempSensor:
-        if (data! > 35 && !(notificationState[sensorKey] ?? false)) {
-          notificationTitle = 'High Temperature Detected!';
-          notificationBody = 'Temperature is very high ($data°C).';
-          ref.read(notificationStateProvider.notifier).state = {
-            ...notificationState,
-            sensorKey: true,
-          };
+        if (data! > 35) {
+          notificationTitle = '🌡️ High Temperature!';
+          notificationBody =
+              'Temperature is very high (${data!.toStringAsFixed(1)}°C).';
+          shouldNotify = true;
         }
         break;
+
       case humidSensor:
-        if (data! > 60 && !(notificationState[sensorKey] ?? false)) {
-          notificationTitle = 'High Humidity Detected!';
-          notificationBody = 'Humidity is very high ($data%).';
-          ref.read(notificationStateProvider.notifier).state = {
-            ...notificationState,
-            sensorKey: true,
-          };
+        if (data! > 60) {
+          notificationTitle = '💧 High Humidity!';
+          notificationBody =
+              'Humidity is very high (${data!.toStringAsFixed(1)}%).';
+          shouldNotify = true;
         }
-        break;
-      case waterSensor:
-        if (data! > 80 && !(notificationState[sensorKey] ?? false)) {
-          notificationTitle = 'High Water Level Detected!';
-          notificationBody = 'Water level is very high ($data%).';
-          ref.read(notificationStateProvider.notifier).state = {
-            ...notificationState,
-            sensorKey: true,
-          };
-        }
-        break;
-      default:
         break;
     }
 
-    if (notificationTitle.isNotEmpty && notificationBody.isNotEmpty) {
-      NotificationService.scheduleNotification(
+    // Only notify if we haven't already notified for this state
+    if (shouldNotify && !(notificationState[sensorKey] ?? false)) {
+      NotificationService.scheduleLocalNotification(
         title: notificationTitle,
         body: notificationBody,
-        scheduledDate: DateTime.now()
-            .add(const Duration(seconds: 1)), // Immediate notification
+        scheduledTime: DateTime.now().add(const Duration(seconds: 5)),
+        payload: sensorKey,
       );
+      ref.read(notificationStateProvider.notifier).state = {
+        ...notificationState,
+        sensorKey: true,
+      };
+    } else if (!shouldNotify && notificationState[sensorKey] == true) {
+      // Reset notification state when values return to normal
+      ref.read(notificationStateProvider.notifier).state = {
+        ...notificationState,
+        sensorKey: false,
+      };
     }
   }
 
@@ -313,10 +374,8 @@ class _DataField extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     const double maxWidth = 150;
 
-    // Check and trigger notifications
     return Consumer(
       builder: (context, ref, child) {
-        // Check and trigger notifications
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _checkAndTriggerNotification(context, ref);
         });
@@ -334,13 +393,21 @@ class _DataField extends StatelessWidget {
                             ? _getTemperatureDeclaration(data)
                             : sensor == humidSensor
                                 ? _getHumidityDeclaration(data)
-                                : sensor == waterSensor
-                                    ? _getWaterLevelDeclaration(data)
-                                    : ''),
+                                : sensor == heatIndexSensor
+                                    ? _getHeatIndexStatus(data?.toInt())
+                                    : sensor == drumwaterSensor
+                                        ? _getDrumWaterLevelDeclaration(data)
+                                        : sensor == drinklerwaterSensor
+                                            ? _getDrinklerWaterLevelDeclaration(
+                                                data)
+                                            : ''),
                 style: textTheme.labelLarge,
               ),
               Text(
-                (data ?? stringData ?? '').toString() + sensor.suffix,
+                (data?.toStringAsFixed(sensor == gasSensor ? 1 : 0) ??
+                        stringData ??
+                        '') +
+                    sensor.suffix,
                 style:
                     textTheme.headlineSmall?.copyWith(color: sensor.lineColor),
               ),

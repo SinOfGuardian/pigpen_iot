@@ -14,12 +14,15 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 
     <application
         android:enableOnBackInvokedCallback="true"
         android:label="Pig Pen IoT"
         android:name="${applicationName}"
-        android:icon="@mipmap/pig_icon250x250">
+        android:icon="@mipmap/pig_icon250x250"
+        android:usesCleartextTraffic="true">
 
         <!-- Main Activity -->
         <activity
@@ -58,20 +61,26 @@
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false"/>
         <receiver
-            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
-            </intent-filter>
-        </receiver>
+    android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+    android:enabled="true"
+    android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+    </intent-filter>
+</receiver>
 
         <!-- Notification Service -->
         <service
             android:name="com.dexterous.flutterlocalnotifications.FlutterLocalNotificationsService"
             android:exported="true"/>
+    <service
+      android:name=".MyFirebaseMessagingService"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+      </intent-filter>
+    </service>
        
     </application>
 </manifest>

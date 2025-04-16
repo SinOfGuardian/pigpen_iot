@@ -62,7 +62,7 @@ class _GraphsSection extends ConsumerStatefulWidget {
 class _GraphsSectionState extends ConsumerState<_GraphsSection>
     with AutomaticKeepAliveClientMixin {
   late final Timer timer;
-  int tempVal = 0, humidVal = 0, waterVal = 0;
+  int heatindexVal = 0, drinkwaterVal = 0, tempVal = 0, humidVal = 0;
   double gasVal = 0.0;
 
   @override
@@ -76,8 +76,11 @@ class _GraphsSectionState extends ConsumerState<_GraphsSection>
       (timer) {
         ref.read(graphDataProvider(tempSensor).notifier).update(tempVal);
         ref.read(graphDataProvider(humidSensor).notifier).update(humidVal);
+        ref
+            .read(graphDataProvider(heatIndexSensor).notifier)
+            .update(heatindexVal);
+        //ref.read(graphDataProvider(humidSensor).notifier).update(humidVal);
         ref.read(graphDataProvider(gasSensor).notifier).update(gasVal);
-        ref.read(graphDataProvider(waterSensor).notifier).update(waterVal);
       },
     );
 
@@ -88,8 +91,8 @@ class _GraphsSectionState extends ConsumerState<_GraphsSection>
         newState.whenData((device) {
           tempVal = device.temperature;
           humidVal = device.humidity;
+          heatindexVal = device.heatIndex;
           gasVal = device.gasDetection;
-          waterVal = device.waterLevel;
         });
       },
     );
@@ -118,13 +121,30 @@ class _GraphSectionView extends StlsView<_GraphsSectionState> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            _SingleGraph(provider: graphDataProvider(tempSensor)),
+            // Row for temperature and humidity
+            Row(
+              children: [
+                Expanded(
+                    child: SizedBox(
+                        height: 150,
+                        child: _SingleGraph(
+                            provider: graphDataProvider(tempSensor)))),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: SizedBox(
+                        height: 150,
+                        child: _SingleGraph(
+                            provider: graphDataProvider(humidSensor)))),
+              ],
+            ),
             const SizedBox(height: 20),
-            _SingleGraph(provider: graphDataProvider(humidSensor)),
+            _SingleGraph(provider: graphDataProvider(heatIndexSensor)),
             const SizedBox(height: 20),
+            // _SingleGraph(provider: graphDataProvider(humidSensor)),
+            // const SizedBox(height: 20),
             _SingleGraph(provider: graphDataProvider(gasSensor)),
-            const SizedBox(height: 20),
-            _SingleGraph(provider: graphDataProvider(waterSensor)),
+            // const SizedBox(height: 20),
+            // _SingleGraph(provider: graphDataProvider(drinklerwaterSensor)),
           ],
         ),
       ),

@@ -261,12 +261,11 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     final notificationTime = now.add(adjustedDuration);
     print('Scheduled Notification Time: $notificationTime');
 
-    await NotificationService.scheduleNotification(
+    await NotificationService.scheduleLocalNotification(
       title: 'Pig Wash Reminder',
       body:
           'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(dateTimePicked)}',
-      scheduledDate: notificationTime,
-      payload: 'wash now',
+      scheduledTime: notificationTime,
     );
 
     print('Scheduled notification at: $notificationTime');

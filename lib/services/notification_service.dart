@@ -1,159 +1,269 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+  static bool _tzInitialized = false;
+  static bool _fcmInitialized = false;
 
-  static bool _timeZonesInitialized = false;
-
-  /// Initializes the notification service
+  // Initialize all notification services
   static Future<void> init() async {
-    try {
-      // Initialize timezones only once
-      if (!_timeZonesInitialized) {
-        tz_data.initializeTimeZones();
-        _timeZonesInitialized = true;
-      }
+    await _initTimezone();
+    await _initLocalNotifications();
+    await _initFirebaseMessaging();
+  }
 
-      const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/pig_icon250x250');
-
-      const InitializationSettings initializationSettings =
-          InitializationSettings(
-        android: androidSettings,
-      );
-
-      await _notifications.initialize(
-        initializationSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) {
-          debugPrint('Notification tapped: ${response.payload}');
-        },
-      );
-
-      await _createNotificationChannel();
-    } catch (e) {
-      debugPrint('NotificationService init error: $e');
-      rethrow;
+  // Timezone initialization
+  static Future<void> _initTimezone() async {
+    if (!_tzInitialized) {
+      tz_data.initializeTimeZones();
+      final String timeZone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timeZone));
+      _tzInitialized = true;
     }
   }
 
-  /// Creates the notification channel
+  // Local notifications setup
+  static Future<void> _initLocalNotifications() async {
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/pig_icon250x250');
+
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (response) {
+        debugPrint("Notification tapped: ${response.payload}");
+        // Handle notification tap here
+      },
+    );
+
+    await _createNotificationChannel();
+    await _requestPermissions();
+  }
+
+  // Firebase Cloud Messaging setup
+  static Future<void> _initFirebaseMessaging() async {
+    if (!_fcmInitialized) {
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      // Background message handler
+      FirebaseMessaging.onBackgroundMessage(
+          _firebaseMessagingBackgroundHandler);
+
+      // Foreground message handler
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+      // Terminated message handler
+      FirebaseMessaging.instance
+          .getInitialMessage()
+          .then(_handleTerminatedMessage);
+
+      _fcmInitialized = true;
+    }
+  }
+
+  // Create notification channel (Android)
   static Future<void> _createNotificationChannel() async {
-    if (Platform.isAndroid && (await _isAndroid8OrHigher())) {
-      const AndroidNotificationChannel channel = AndroidNotificationChannel(
-        'pig_wash_channel',
-        'Pig Wash Reminders',
-        description: 'Reminders for pig wash schedules',
-        importance: Importance.max,
-        sound: RawResourceAndroidNotificationSound('notification_sound'),
-        enableVibration: true,
-        showBadge: true,
-      );
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'pig_wash_channel',
+      'Pig Wash Alerts',
+      description: 'Alerts for pig monitoring system',
+      importance: Importance.high,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound('notification_sound'),
+      enableVibration: true,
+    );
 
-      await _notifications
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(channel);
-    }
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
   }
 
-  /// Checks Android version
-  static Future<bool> _isAndroid8OrHigher() async {
-    return Platform.isAndroid && int.parse(Platform.version.split('.')[0]) >= 8;
-  }
-
-  /// Handles exact alarm permissions
-  static Future<bool> checkAndRequestExactAlarmPermission() async {
-    if (Platform.isAndroid && (await _isAndroid13OrHigher())) {
-      final status = await Permission.scheduleExactAlarm.status;
-      if (!status.isGranted) {
-        final result = await Permission.scheduleExactAlarm.request();
-        return result.isGranted;
+  // Request notification permissions
+  static Future<bool> _requestPermissions() async {
+    if (Platform.isAndroid) {
+      if (int.parse(Platform.version.split('.')[0]) >= 13) {
+        final status = await Permission.notification.request();
+        return status.isGranted;
       }
       return true;
+    } else if (Platform.isIOS) {
+      final status = await Permission.notification.request();
+      return status.isGranted;
     }
-    return true;
+    return false;
   }
 
-  /// Checks Android 13+
-  static Future<bool> _isAndroid13OrHigher() async {
-    return Platform.isAndroid &&
-        int.parse(Platform.version.split('.')[0]) >= 13;
+  // Background message handler
+  @pragma('vm:entry-point')
+  static Future<void> _firebaseMessagingBackgroundHandler(
+      RemoteMessage message) async {
+    await _initTimezone();
+    await _initLocalNotifications();
+    await showNotificationFromFirebase(message);
   }
 
-  /// Schedules a notification
-  static Future<void> scheduleNotification({
+  // Foreground message handler
+  static Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    await showNotificationFromFirebase(message);
+  }
+
+  // Terminated message handler
+  static Future<void> _handleTerminatedMessage(RemoteMessage? message) async {
+    if (message != null) {
+      await showNotificationFromFirebase(message);
+    }
+  }
+
+  // Show immediate notification
+  static Future<void> showNotification({
     required String title,
     required String body,
-    required DateTime scheduledDate,
+    String? payload,
+    String? channelId,
+  }) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'pig_wash_channel',
+      'Pig Wash Alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      0, // Notification ID
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  // Schedule a notification
+  static Future<void> scheduleLocalNotification({
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
     String? payload,
   }) async {
-    try {
-      final hasPermission = await checkAndRequestExactAlarmPermission();
-      if (!hasPermission) {
-        throw Exception('Exact alarm permission not granted');
-      }
+    final tz.TZDateTime scheduledTz = tz.TZDateTime.from(
+      scheduledTime,
+      tz.local,
+    );
 
-      final tz.TZDateTime scheduledTime = scheduledDate is tz.TZDateTime
-          ? scheduledDate
-          : tz.TZDateTime.from(scheduledDate, tz.local);
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'pig_wash_channel',
+      'Pig Wash Alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+    );
 
-      const AndroidNotificationDetails androidDetails =
-          AndroidNotificationDetails(
-        'pig_wash_channel',
-        'Pig Wash Reminders',
-        importance: Importance.max,
-        priority: Priority.high,
-        icon: '@mipmap/pig_icon250x250',
-        largeIcon: DrawableResourceAndroidBitmap('@mipmap/pig_icon250x250'),
-        color: Colors.green,
-        enableVibration: true,
-        playSound: true,
-        channelShowBadge: true,
-      );
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
 
-      const NotificationDetails notificationDetails = NotificationDetails(
-        android: androidDetails,
-      );
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
 
-      await _notifications.zonedSchedule(
-        DateTime.now().millisecondsSinceEpoch % 100000,
-        title,
-        body,
-        scheduledTime,
-        notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: payload,
-      );
-
-      debugPrint('Notification scheduled at $scheduledTime (local time)');
-    } catch (e) {
-      debugPrint('Failed to schedule notification: $e');
-      rethrow;
-    }
+    await _notifications.zonedSchedule(
+      scheduledTime.millisecondsSinceEpoch.remainder(100000),
+      title,
+      body,
+      scheduledTz,
+      notificationDetails,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: payload,
+    );
   }
 
-  /// Cancels all notifications
-  static Future<void> cancelAllNotifications(int id) async {
-    await _notifications.cancelAll();
-    debugPrint('All notifications canceled');
+  // Handle Firebase Cloud Messages
+  static Future<void> showNotificationFromFirebase(
+      RemoteMessage message) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'pig_wash_channel',
+      'Pig Wash Alerts',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      message.hashCode,
+      message.notification?.title ?? "PigPen Alert",
+      message.notification?.body ?? "New alert from PigPen",
+      notificationDetails,
+      payload: message.data.toString(),
+    );
+  }
+
+  // Get FCM token for device
+  static Future<String?> getFCMToken() async {
+    return await FirebaseMessaging.instance.getToken();
+  }
+
+  // Subscribe to topic
+  static Future<void> subscribeToTopic(String topic) async {
+    await FirebaseMessaging.instance.subscribeToTopic(topic);
+  }
+
+  // Unsubscribe from topic
+  static Future<void> unsubscribeFromTopic(String topic) async {
+    await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
   }
 }
-//this is how to use of call this service
-// In your widget
-// final notificationService = ref.read(notificationServiceProvider);
-
-// // Initialize early in your app lifecycle
-// await notificationService.init();
-
-// // Schedule a notification
-// await notificationService.scheduleNotification(
-//   title: 'Test',
-//   body: 'Notification',
-//   scheduledDate: DateTime.now().add(Duration(seconds: 5)),
-// );
