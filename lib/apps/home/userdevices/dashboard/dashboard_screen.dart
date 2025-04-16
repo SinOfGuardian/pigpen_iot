@@ -99,13 +99,15 @@ class BottomSection extends ConsumerWidget {
                 maxLines: isAppInFloatingWindow(context) ? 2 : 3,
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  // Future: Add edit name logic
+                },
                 child: Text(
                   'Update Details',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                     fontSize: 16,
-                    decoration: TextDecoration.underline, // Add underline
+                    decoration: TextDecoration.underline,
                   ),
                 ),
               ),
@@ -113,7 +115,7 @@ class BottomSection extends ConsumerWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => notifier.state = !isFavorited, // Toggle favorite state.
+          onTap: () => notifier.state = !isFavorited,
           child: Icon(
             isFavorited ? Ionicons.heart : Ionicons.heart_outline,
             size: 30,
@@ -243,18 +245,17 @@ class BottomSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userDevice = ref.watch(activeDeviceProvider);
     return ShaddowedContainer(
       child: Padding(
         padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _deviceName(context, 'Device Name', ref),
+            _deviceName(context, userDevice?.deviceName, ref),
             Expanded(
               child: _dataSection(context, ref),
             ),
-            // _description(context, 'description'),
-            // _characteristicSection(context),
           ],
         ),
       ),
