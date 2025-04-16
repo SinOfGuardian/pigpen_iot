@@ -19,6 +19,16 @@ class DeviceFirebase {
     return _database.ref('$_path/$deviceId/readings').onValue.map((event) =>
         DeviceData.fromJson(event.snapshot.value as Map<Object?, Object?>?));
   }
+
+  Future<void> setManualDuration({
+    required String deviceId,
+    required String type, // "drinkler" or "drum"
+    required int duration, // e.g. 0 to 5
+  }) async {
+    await _database
+        .ref('$_path/$deviceId/variables/manual_${type}_duration')
+        .set(duration);
+  }
 }
 
 class ScheduleOperations with InternetConnection {

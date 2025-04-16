@@ -10,6 +10,7 @@ import 'package:pigpen_iot/custom/app_circularprogressindicator.dart';
 import 'package:pigpen_iot/custom/app_container.dart';
 import 'package:pigpen_iot/custom/app_error_handling.dart';
 import 'package:pigpen_iot/custom/app_text.dart';
+import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
@@ -133,17 +134,18 @@ class BottomSection extends ConsumerWidget {
         .firstOrNull
         ?.dateTime;
 
-    final formattedSchedule = nextSchedule != null
-        ? DateFormat('yyyy/MM/dd HH:mm').format(nextSchedule.toLocal())
-        : 'No schedule';
-
     final deviceProvider = ref.watch(deviceStreamProvider);
+    final firebaseService = DeviceFirebase();
+
+    bool isDrinklerManual = false;
+    bool isDrumManual = false;
+
     return deviceProvider.when(
       data: (device) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🟡 Row 1: Heat Index + Ammonia (Gas Detection)
+            // Row 1: Heat Index + Gas
             Row(
               children: [
                 Expanded(
@@ -159,7 +161,7 @@ class BottomSection extends ConsumerWidget {
             ),
             const SizedBox(height: 5),
 
-            // 🔵 Row 2: Drum Water Level + Drinkler Water Level
+            // Row 2: Drum + Drinkler water levels
             Row(
               children: [
                 Expanded(
@@ -177,42 +179,59 @@ class BottomSection extends ConsumerWidget {
 
             const SizedBox(height: 10),
 
-            // ✅ Drum and Drinkler Manual Switches
+            // 🔘 Manual Controls
             Row(
               children: [
-                Text(
-                  "Drum switch",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                Text("Drum Manual",
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
-                Switch(
-                  value: false,
-                  onChanged: (value) {
-                    // No logic yet
-                  },
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  "Drinkler switch",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+                StatefulBuilder(builder: (context, setLocalState) {
+                  return Switch(
+                    value: isDrumManual,
+                    onChanged: (value) async {
+                      setLocalState(() => isDrumManual = value);
+                      await firebaseService.setManualDuration(
+                        deviceId: deviceId,
+                        type: 'drum',
+                        duration: value ? 5 : 0,
+                      );
+                    },
+                  );
+                }),
+                Text("Drinkler Manual",
+                    style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
-                Switch(
-                  value: false,
-                  onChanged: (value) {
-                    // No logic yet
-                  },
-                ),
+                StatefulBuilder(builder: (context, setLocalState) {
+                  return Switch(
+                    value: isDrinklerManual,
+                    onChanged: (value) async {
+                      setLocalState(() => isDrinklerManual = value);
+                      await firebaseService.setManualDuration(
+                        deviceId: deviceId,
+                        type: 'drinkler',
+                        duration: value ? 5 : 0,
+                      );
+                    },
+                  );
+                }),
               ],
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-            // 🕓 Next Bath Time (moved up)
-            _DataField(
-              sensor: nextWatering,
-              data: null,
-              stringData: formattedSchedule,
+            // 📅 Next Watering Time (moved here)
+            Row(
+              children: [
+                Expanded(
+                  child: _DataField(
+                    sensor: nextWatering,
+                    data: null,
+                    stringData: nextSchedule != null
+                        ? DateFormat('yyyy/MM/dd HH:mm').format(nextSchedule)
+                        : 'No schedule',
+                  ),
+                ),
+              ],
             ),
           ],
         );
