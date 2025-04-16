@@ -5,7 +5,12 @@
     "drinkler",
     "drinklerwater",
     "drumwater",
+    "Favorited",
+    "firstname",
     "heatindex",
-    "Localnotification"
+    "lastname",
+    "Localnotification",
+    "Shaddowed",
+    "userdevices"
   ]
 }

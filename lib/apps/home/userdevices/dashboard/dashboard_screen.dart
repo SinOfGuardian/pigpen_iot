@@ -13,6 +13,7 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
+import 'package:intl/intl.dart'; // Ensure this is at the top
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -24,7 +25,7 @@ class DashboardScreen extends StatelessWidget {
       color: colorScheme.secondaryContainer,
       child: Column(
         children: [
-          const Expanded(flex: 9, child: UpperSection()),
+          const Expanded(flex: 7, child: UpperSection()),
           const Expanded(flex: 10, child: BottomSection()),
           Container(height: 50, color: colorScheme.surface),
         ],
@@ -132,6 +133,10 @@ class BottomSection extends ConsumerWidget {
         .firstOrNull
         ?.dateTime;
 
+    final formattedSchedule = nextSchedule != null
+        ? DateFormat('yyyy/MM/dd HH:mm').format(nextSchedule.toLocal())
+        : 'No schedule';
+
     final deviceProvider = ref.watch(deviceStreamProvider);
     return deviceProvider.when(
       data: (device) {
@@ -153,6 +158,7 @@ class BottomSection extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 5),
+
             // 🔵 Row 2: Drum Water Level + Drinkler Water Level
             Row(
               children: [
@@ -168,29 +174,45 @@ class BottomSection extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // ✅ Next Watering + Manual Toggle
+
+            const SizedBox(height: 10),
+
+            // ✅ Drum and Drinkler Manual Switches
             Row(
               children: [
-                Expanded(
-                  child: _DataField(
-                    sensor: nextWatering,
-                    data: null,
-                    stringData: nextSchedule?.toString() ?? 'No schedule',
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Text(
-                  "Manual Watering",
+                  "Drum switch",
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
+                const Spacer(),
                 Switch(
                   value: false,
-                  onChanged: (value) async {
-                    // Handle switch change
+                  onChanged: (value) {
+                    // No logic yet
+                  },
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Drinkler switch",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const Spacer(),
+                Switch(
+                  value: false,
+                  onChanged: (value) {
+                    // No logic yet
                   },
                 ),
               ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // 🕓 Next Bath Time (moved up)
+            _DataField(
+              sensor: nextWatering,
+              data: null,
+              stringData: formattedSchedule,
             ),
           ],
         );
@@ -259,15 +281,15 @@ class _DataField extends StatelessWidget {
     return ' - Emergency';
   }
 
-  String _getDrumWaterLevelDeclaration(num? waterLevel) {
-    if (waterLevel == null) return '- Unknown';
-    return waterLevel == 1 ? ' - Water Drum Present' : ' - Empty';
-  }
+  // String _getDrumWaterLevelDeclaration(num? waterLevel) {
+  //   if (waterLevel == null) return '- Unknown';
+  //   return waterLevel == 1 ? ' - Water Drum Present' : ' - Empty';
+  // }
 
-  String _getDrinklerWaterLevelDeclaration(num? waterLevel) {
-    if (waterLevel == null) return '- Unknown';
-    return waterLevel == 1 ? ' - Water Drinkler Present' : ' - Empty';
-  }
+  // String _getDrinklerWaterLevelDeclaration(num? waterLevel) {
+  //   if (waterLevel == null) return '- Unknown';
+  //   return waterLevel == 1 ? ' - Water Drinkler Present' : ' - Empty';
+  // }
 
   // Improved notification logic
   void _checkAndTriggerNotification(BuildContext context, WidgetRef ref) {
@@ -380,6 +402,10 @@ class _DataField extends StatelessWidget {
           _checkAndTriggerNotification(context, ref);
         });
 
+        final isWaterSensor =
+            sensor == drumwaterSensor || sensor == drinklerwaterSensor;
+        final showValue = !isWaterSensor;
+
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
           child: Column(
@@ -395,31 +421,44 @@ class _DataField extends StatelessWidget {
                                 ? _getHumidityDeclaration(data)
                                 : sensor == heatIndexSensor
                                     ? _getHeatIndexStatus(data?.toInt())
-                                    : sensor == drumwaterSensor
-                                        ? _getDrumWaterLevelDeclaration(data)
-                                        : sensor == drinklerwaterSensor
-                                            ? _getDrinklerWaterLevelDeclaration(
-                                                data)
-                                            : ''),
+                                    : ''),
                 style: textTheme.labelLarge,
               ),
-              Text(
-                (data?.toStringAsFixed(sensor == gasSensor ? 1 : 0) ??
-                        stringData ??
-                        '') +
-                    sensor.suffix,
-                style:
-                    textTheme.headlineSmall?.copyWith(color: sensor.lineColor),
-              ),
-              data == null
-                  ? const SizedBox()
-                  : HorizontalProgressBar(
-                      data: data?.toDouble(),
-                      maxWidth: maxWidth,
-                      min: sensor.min,
-                      max: sensor.max,
-                      lineColor: sensor.lineColor,
+              if (showValue)
+                Text(
+                  (data?.toStringAsFixed(sensor == gasSensor ? 1 : 0) ??
+                          stringData ??
+                          '') +
+                      sensor.suffix,
+                  style: textTheme.headlineSmall
+                      ?.copyWith(color: sensor.lineColor),
+                ),
+              if (isWaterSensor)
+                Row(
+                  children: [
+                    Icon(
+                      Ionicons.water_outline,
+                      color: data == 1 ? Colors.blue : Colors.red,
+                      size: 24,
                     ),
+                    const SizedBox(width: 8),
+                    Text(
+                      data == 1 ? 'Water is here 🐳' : 'Time to refill 🔄',
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: data == 1 ? Colors.blue : Colors.red,
+                      ),
+                    ),
+                  ],
+                )
+              else if (data != null)
+                HorizontalProgressBar(
+                  data: data?.toDouble(),
+                  maxWidth: maxWidth,
+                  min: sensor.min,
+                  max: sensor.max,
+                  lineColor: sensor.lineColor,
+                ),
             ],
           ),
         );
