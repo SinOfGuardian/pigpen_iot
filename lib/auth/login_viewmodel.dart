@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -25,7 +27,8 @@ class Login extends _$Login {
   void clear() => state = AuthUser.clear();
 
   void update({String? email, String? password, String? password2}) {
-    state = state.copyWith(email: email, password: password, password2: password2);
+    state =
+        state.copyWith(email: email, password: password, password2: password2);
   }
 
   final _auth = FirebaseAuth.instance;
@@ -44,7 +47,7 @@ class Login extends _$Login {
 
       final userCredential = await _auth.signInWithCredential(cred);
       final user = userCredential.user;
-      
+
       if (user != null) {
         await _initializeUserInFirestore(user);
       }
@@ -70,11 +73,13 @@ class Login extends _$Login {
   }
 
   Future<void> _initializeUserInFirestore(User user) async {
-    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final userRef =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
     final doc = await userRef.get();
 
     if (!doc.exists) {
-      final dateRegistered = DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now());
+      final dateRegistered =
+          DateFormat("MM-dd-yyyy hh:mm a").format(DateTime.now());
       final newUser = PigpenUser(
         userId: user.uid,
         email: user.email ?? '',
@@ -85,10 +90,8 @@ class Login extends _$Login {
         things: 0,
         profileImageUrl: user.photoURL ?? '',
       );
-      
-      await userRef.set({
-        'profile': newUser.toJson()
-      });
+
+      await userRef.set({'profile': newUser.toJson()});
     }
   }
 
@@ -96,12 +99,14 @@ class Login extends _$Login {
     final email = state.email.trim();
     final password = state.password.trim();
     if (email.isEmpty || password.isEmpty) return null;
-    
-    final credential = await _auth.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    ).timeout(const Duration(seconds: 5));
-    
+
+    final credential = await _auth
+        .signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        )
+        .timeout(const Duration(seconds: 5));
+
     return credential.user;
   }
 

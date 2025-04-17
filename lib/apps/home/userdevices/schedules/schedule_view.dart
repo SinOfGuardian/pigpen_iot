@@ -225,7 +225,7 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     final dateTimePicked = ref.read(dateTimeProvider.notifier).state;
 
     // Log the deviceId
-    print('Device ID: $deviceId');
+    debugPrint('Device ID: $deviceId');
 
     // Generate 3 schedules
     // final schedules = generateDailySchedules(dateTimePicked);
@@ -241,25 +241,25 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
 
     // Convert DateTime to TZDateTime (local time zone)
     final tzScheduledDate = tz.TZDateTime.from(dateTimePicked, tz.local);
-    print('Original DateTime: ${dateTimePicked.toIso8601String()}');
-    print('Converted TZDateTime: $tzScheduledDate');
+    debugPrint('Original DateTime: ${dateTimePicked.toIso8601String()}');
+    debugPrint('Converted TZDateTime: $tzScheduledDate');
 
     // Get the current time in the local time zone
     final now = tz.TZDateTime.now(tz.local);
-    print('Current Time: $now');
+    debugPrint('Current Time: $now');
 
     // Calculate the difference between the scheduled time and current time
     final durationUntilScheduled = tzScheduledDate.difference(now);
-    print('Duration Until Scheduled: $durationUntilScheduled');
+    debugPrint('Duration Until Scheduled: $durationUntilScheduled');
 
     // Subtract 1 second from the duration
     final adjustedDuration =
         durationUntilScheduled - const Duration(seconds: 1);
-    print('Adjusted Duration (minus 1 second): $adjustedDuration');
+    debugPrint('Adjusted Duration (minus 1 second): $adjustedDuration');
 
     // Schedule a notification using the adjusted duration
     final notificationTime = now.add(adjustedDuration);
-    print('Scheduled Notification Time: $notificationTime');
+    debugPrint('Scheduled Notification Time: $notificationTime');
 
     await NotificationService.scheduleLocalNotification(
       title: 'Pig Wash Reminder',
@@ -268,7 +268,7 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
       scheduledTime: notificationTime,
     );
 
-    print('Scheduled notification at: $notificationTime');
+    debugPrint('Scheduled notification at: $notificationTime');
     //  }
     return true;
   }
@@ -394,7 +394,7 @@ class _CreateSectionView
     );
   }
 
-  Widget flaotingWindowAndroid(BuildContext context) {
+  Widget floatingWindowAndroid(BuildContext context) {
     return Column(
       children: [
         const SectionTitle('Create schedule', margin: null),
@@ -463,7 +463,7 @@ class _CreateSectionView
   @override
   Widget build(BuildContext context) {
     return isAppInFloatingWindow(context)
-        ? flaotingWindowAndroid(context)
+        ? floatingWindowAndroid(context)
         : normalScreenAndroid(context);
   }
 }
@@ -503,7 +503,6 @@ class _ScheduledSectionState extends ConsumerState<_ScheduledSection> {
 
   @override
   void setState(VoidCallback fn) {
-    // TODO: implement setState
     super.setState(fn);
   }
 

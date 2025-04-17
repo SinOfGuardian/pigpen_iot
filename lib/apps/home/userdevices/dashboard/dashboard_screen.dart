@@ -98,19 +98,6 @@ class BottomSection extends ConsumerWidget {
                 (deviceName ?? 'Name not available').toTitleCase(),
                 maxLines: isAppInFloatingWindow(context) ? 2 : 3,
               ),
-              TextButton(
-                onPressed: () {
-                  // Future: Add edit name logic
-                },
-                child: Text(
-                  'Update Details',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontSize: 16,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -161,7 +148,7 @@ class BottomSection extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 10),
 
             // Row 2: Drum + Drinkler water levels
             Row(
@@ -179,27 +166,50 @@ class BottomSection extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 2),
 
             // 🔘 Manual Controls
             Row(
               children: [
-                Text("Drum Manual",
+                Text("Sprinkler Manual",
                     style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
                 StatefulBuilder(builder: (context, setLocalState) {
                   return Switch(
                     value: isDrumManual,
                     onChanged: (value) async {
+                      final drumLevel =
+                          ref.read(deviceStreamProvider).maybeWhen(
+                                data: (device) => device.drumwaterLevel,
+                                orElse: () => null,
+                              );
+
+                      if (value && drumLevel == 0) {
+                        // If turning on and drum is empty, show snackbar
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Drum is empty! Please refill before activating sprinkler.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return; // Don't proceed
+                      }
+
                       setLocalState(() => isDrumManual = value);
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
-                        type: 'drum',
+                        type: 'sprinkler',
                         duration: value ? 5 : 0,
                       );
                     },
                   );
                 }),
+              ],
+            ),
+            //  const SizedBox(height: 5),
+            Row(
+              children: [
                 Text("Drinkler Manual",
                     style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
@@ -207,6 +217,23 @@ class BottomSection extends ConsumerWidget {
                   return Switch(
                     value: isDrinklerManual,
                     onChanged: (value) async {
+                      final drumLevel =
+                          ref.read(deviceStreamProvider).maybeWhen(
+                                data: (device) => device.drumwaterLevel,
+                                orElse: () => null,
+                              );
+
+                      if (value && drumLevel == 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Drum is empty! Please refill before activating drinkler.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
                       setLocalState(() => isDrinklerManual = value);
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
@@ -219,7 +246,7 @@ class BottomSection extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(height: 10),
+            // const SizedBox(height: 10),
 
             // 📅 Next Watering Time (moved here)
             Row(
@@ -258,6 +285,76 @@ class BottomSection extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class EditDeviceDetailsSheet extends ConsumerStatefulWidget {
+  final String? deviceName;
+  const EditDeviceDetailsSheet({super.key, this.deviceName});
+
+  @override
+  ConsumerState<EditDeviceDetailsSheet> createState() =>
+      _EditDeviceDetailsSheetState();
+}
+
+class _EditDeviceDetailsSheetState
+    extends ConsumerState<EditDeviceDetailsSheet> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.deviceName ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveDeviceName() async {
+    final newName = _controller.text.trim();
+    final device = ref.read(activeDeviceProvider);
+
+    if (device != null && newName.isNotEmpty) {
+      // Update Firebase
+      await DeviceFirebase().updateDeviceName(device.deviceId, newName);
+
+      // Update local provider
+      ref.read(activeDeviceProvider.notifier).state =
+          device.copyWith(deviceName: newName);
+
+      Navigator.of(context).pop(); // Close sheet
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, bottomInset + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Edit Device Name',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _controller,
+            decoration: const InputDecoration(
+              labelText: 'Device Name',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _saveDeviceName,
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }

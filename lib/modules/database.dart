@@ -29,6 +29,12 @@ class DeviceFirebase {
         .ref('$_path/$deviceId/variables/manual_${type}_duration')
         .set(duration);
   }
+
+  Future<void> updateDeviceName(String deviceId, String newName) async {
+    await FirebaseDatabase.instance.ref('devices/$deviceId').update({
+      'deviceName': newName,
+    });
+  }
 }
 
 class ScheduleOperations with InternetConnection {
@@ -58,7 +64,7 @@ class ScheduleOperations with InternetConnection {
             dateTimePicked.toString(),
       }).timeout(TIMEOUT_TIME);
     } catch (e) {
-      print('Error uploading schedule: $e');
+      debugPrint('Error uploading schedule: $e');
       // Optionally, show an alert or handle the error appropriately
     }
   }

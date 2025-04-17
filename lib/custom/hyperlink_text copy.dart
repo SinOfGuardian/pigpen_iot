@@ -1,8 +1,13 @@
+// ignore_for_file: file_names
+
 import 'package:flutter/material.dart';
 
 class HyperLinkText extends StatelessWidget {
   const HyperLinkText(
-      {required this.text, required this.hyperlink, required this.onPressed, super.key});
+      {required this.text,
+      required this.hyperlink,
+      required this.onPressed,
+      super.key});
 
   final String text, hyperlink;
   final VoidCallback? onPressed;
