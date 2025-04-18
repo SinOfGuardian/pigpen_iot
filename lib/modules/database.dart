@@ -35,6 +35,16 @@ class DeviceFirebase {
       'deviceName': newName,
     });
   }
+
+  Stream<int> manualStatusStream({
+    required String deviceId,
+    required String type,
+  }) {
+    return _database
+        .ref('$_path/$deviceId/variables/manual_${type}_duration')
+        .onValue
+        .map((event) => (event.snapshot.value ?? 0) as int);
+  }
 }
 
 class ScheduleOperations with InternetConnection {

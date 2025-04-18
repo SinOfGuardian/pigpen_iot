@@ -125,9 +125,11 @@ class BottomSection extends ConsumerWidget {
 
     final deviceProvider = ref.watch(deviceStreamProvider);
     final firebaseService = DeviceFirebase();
+    final drumManualProvider = StateProvider<bool>((ref) => false);
+    final drinklerManualProvider = StateProvider<bool>((ref) => false);
 
-    bool isDrinklerManual = false;
-    bool isDrumManual = false;
+    //bool isDrinklerManual = false;
+    // bool isDrumManual = false;
 
     return deviceProvider.when(
       data: (device) {
@@ -174,7 +176,8 @@ class BottomSection extends ConsumerWidget {
                 Text("Sprinkler Manual",
                     style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
-                StatefulBuilder(builder: (context, setLocalState) {
+                Consumer(builder: (context, ref, _) {
+                  final isDrumManual = ref.watch(drumManualProvider);
                   return Switch(
                     value: isDrumManual,
                     onChanged: (value) async {
@@ -185,7 +188,6 @@ class BottomSection extends ConsumerWidget {
                               );
 
                       if (value && drumLevel == 0) {
-                        // If turning on and drum is empty, show snackbar
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
@@ -193,10 +195,10 @@ class BottomSection extends ConsumerWidget {
                             backgroundColor: Colors.red,
                           ),
                         );
-                        return; // Don't proceed
+                        return;
                       }
 
-                      setLocalState(() => isDrumManual = value);
+                      ref.read(drumManualProvider.notifier).state = value;
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
                         type: 'sprinkler',
@@ -207,13 +209,15 @@ class BottomSection extends ConsumerWidget {
                 }),
               ],
             ),
+
             //  const SizedBox(height: 5),
             Row(
               children: [
                 Text("Drinkler Manual",
                     style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
-                StatefulBuilder(builder: (context, setLocalState) {
+                Consumer(builder: (context, ref, _) {
+                  final isDrinklerManual = ref.watch(drinklerManualProvider);
                   return Switch(
                     value: isDrinklerManual,
                     onChanged: (value) async {
@@ -234,7 +238,7 @@ class BottomSection extends ConsumerWidget {
                         return;
                       }
 
-                      setLocalState(() => isDrinklerManual = value);
+                      ref.read(drinklerManualProvider.notifier).state = value;
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
                         type: 'drinkler',

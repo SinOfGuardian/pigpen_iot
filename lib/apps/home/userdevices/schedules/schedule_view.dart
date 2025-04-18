@@ -35,7 +35,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 const _pageTitle = 'Schedule';
 const _pageDescription =
-    'Scheduling is totally optional—it just sends you a reminder when it’s time to wash the pigs, since that part isn’t automated.';
+    'Scheduling is totally optional—it just sends you a reminder when it’s time to wash or feeding the pigs, since that part isn’t automated.';
 const String _confirDeletemMessage =
     'Are you sure you want to delete this schedule?';
 

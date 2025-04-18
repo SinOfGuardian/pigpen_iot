@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:pigpen_iot/models/device_model.dart';
+import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/exceptions.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -54,4 +55,13 @@ class Devices extends _$Devices {
     final ref = FirebaseDatabase.instance.ref('contents/devices/$deviceId');
     await ref.set(updatedDevice.toJson()).timeout(const Duration(seconds: 5));
   }
+
+  final manualStatusProvider =
+      StreamProvider.family<int, ({String deviceId, String type})>((ref, args) {
+    final firebaseService = DeviceFirebase();
+    return firebaseService.manualStatusStream(
+      deviceId: args.deviceId,
+      type: args.type,
+    );
+  });
 }

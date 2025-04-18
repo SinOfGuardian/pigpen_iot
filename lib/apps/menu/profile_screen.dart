@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, unused_element
 
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -371,7 +371,7 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
           if (FirebaseAuth.instance.currentUser != null) return;
         }
       } catch (e) {
-        print('Error during sign-out: $e');
+        debugPrint('Error during sign-out: $e');
       }
       if (context.mounted) context.go('/signin');
     });
