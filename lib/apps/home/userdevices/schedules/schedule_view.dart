@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'dart:async';
 
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';

@@ -17,6 +17,7 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
+
 import 'package:pigpen_iot/services/notification_service.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -60,7 +61,7 @@ class UpperSection extends ConsumerWidget {
       bottom: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
+        child: Column(
           children: [
             // Expanded(child: _camera(context, ref)),
             // Using flutter_mjpeg (simpler implementation)
@@ -70,7 +71,7 @@ class UpperSection extends ConsumerWidget {
             Expanded(
               child: CameraStreamWidget(
                 streamUrl:
-                    'http://192.168.4.1:81/stream', // Replace with your ESP32-CAM stream URL
+                    'http://192.168.100.210/mjpeg', // Replace with your ESP32-CAM stream URL
               ),
             ),
           ],
@@ -401,16 +402,6 @@ class _DataField extends StatelessWidget {
     if (heatIndex < 32) return ' - Danger';
     return ' - Emergency';
   }
-
-  // String _getDrumWaterLevelDeclaration(num? waterLevel) {
-  //   if (waterLevel == null) return '- Unknown';
-  //   return waterLevel == 1 ? ' - Water Drum Present' : ' - Empty';
-  // }
-
-  // String _getDrinklerWaterLevelDeclaration(num? waterLevel) {
-  //   if (waterLevel == null) return '- Unknown';
-  //   return waterLevel == 1 ? ' - Water Drinkler Present' : ' - Empty';
-  // }
 
   // Improved notification logic
   void _checkAndTriggerNotification(BuildContext context, WidgetRef ref) {

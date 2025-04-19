@@ -18,6 +18,7 @@
     "kbig",
     "lastname",
     "Localnotification",
+    "MJPEG",
     "PASSWORDFELD",
     "Schedis",
     "Shaddowed",
@@ -30,6 +31,7 @@
     "THINGBLOCK",
     "THINGBLOCKSHADOW",
     "TITLETEXT",
+    "Unblur",
     "userdevices",
     "viewmodels"
   ]

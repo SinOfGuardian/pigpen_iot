@@ -49,4 +49,17 @@ class UserDevices extends _$UserDevices {
         .update(userDevice.toJson())
         .timeout(const Duration(seconds: 5));
   }
+
+  final streamUrlProvider =
+      FutureProvider.family<String, String>((ref, deviceId) async {
+    final snapshot = await FirebaseDatabase.instance
+        .ref('contents/devices/$deviceId/streamUrl')
+        .get();
+
+    if (snapshot.exists && snapshot.value is String) {
+      return snapshot.value as String;
+    } else {
+      throw UserException('Stream URL not found for device $deviceId');
+    }
+  });
 }
