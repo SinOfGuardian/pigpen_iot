@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -6,6 +7,8 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
@@ -30,6 +33,84 @@ class NotificationService {
     }
   }
 
+  static Future<void> handleScheduleConfirmation(String payload) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    if (navigatorKey.currentContext == null) {
+      debugPrint('No context available for confirmation dialog.');
+      return;
+    }
+
+    final parts = payload.split('|');
+    if (parts.length != 3) return;
+
+    final deviceId = parts[0];
+    final scheduleKey = parts[1];
+    final category = parts[2];
+
+    bool? userResponded;
+
+    showDialog(
+      context: navigatorKey.currentContext!,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Confirm Task"),
+          content: Text("Did you complete the $category task?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                userResponded = true;
+                Navigator.pop(context);
+                _logAndRemove(deviceId, scheduleKey, category, "success");
+              },
+              child: const Text("Yes"),
+            ),
+            TextButton(
+              onPressed: () {
+                userResponded = true;
+                Navigator.pop(context);
+                _logAndRemove(deviceId, scheduleKey, category, "failed");
+              },
+              child: const Text("No"),
+            ),
+          ],
+        );
+      },
+    );
+
+    Future.delayed(const Duration(minutes: 5)).then((_) async {
+      if (userResponded != true) {
+        await _logAndRemove(deviceId, scheduleKey, category, "timeout");
+      }
+    });
+  }
+
+  static Future<void> _logAndRemove(String deviceId, String scheduleKey,
+      String category, String status) async {
+    final database = FirebaseDatabase.instance;
+
+    final snapshot = await database
+        .ref('/realtime/schedules/$deviceId/$scheduleKey/dateTime')
+        .get();
+
+    final dateTime = snapshot.exists
+        ? DateTime.parse(snapshot.value.toString())
+        : DateTime.now();
+
+    await database.ref('/realtime/logs/$deviceId/$scheduleKey').set({
+      'status': status,
+      'category': category,
+      'dateTime': dateTime.toIso8601String(),
+      'loggedAt': DateTime.now().toIso8601String(),
+    });
+
+    await database.ref('/realtime/schedules/$deviceId/$scheduleKey').remove();
+
+    debugPrint(
+        "Logged $status and removed schedule $scheduleKey for $category");
+  }
+
   // Local notifications setup
   static Future<void> _initLocalNotifications() async {
     const AndroidInitializationSettings androidSettings =
@@ -49,9 +130,11 @@ class NotificationService {
 
     await _notifications.initialize(
       initSettings,
-      onDidReceiveNotificationResponse: (response) {
-        debugPrint("Notification tapped: ${response.payload}");
-        // Handle notification tap here
+      onDidReceiveNotificationResponse: (response) async {
+        debugPrint("Notification tapped: \${response.payload}");
+        if (response.payload != null) {
+          await handleScheduleConfirmation(response.payload!);
+        }
       },
     );
 
@@ -69,14 +152,11 @@ class NotificationService {
         sound: true,
       );
 
-      // Background message handler
       FirebaseMessaging.onBackgroundMessage(
           _firebaseMessagingBackgroundHandler);
 
-      // Foreground message handler
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
-      // Terminated message handler
       FirebaseMessaging.instance
           .getInitialMessage()
           .then(_handleTerminatedMessage);
@@ -85,7 +165,6 @@ class NotificationService {
     }
   }
 
-  // Create notification channel (Android)
   static Future<void> _createNotificationChannel() async {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'pig_wash_channel',
@@ -103,7 +182,6 @@ class NotificationService {
         ?.createNotificationChannel(channel);
   }
 
-  // Request notification permissions
   static Future<bool> _requestPermissions() async {
     if (Platform.isAndroid) {
       if (int.parse(Platform.version.split('.')[0]) >= 13) {
@@ -118,7 +196,6 @@ class NotificationService {
     return false;
   }
 
-  // Background message handler
   @pragma('vm:entry-point')
   static Future<void> _firebaseMessagingBackgroundHandler(
       RemoteMessage message) async {
@@ -127,19 +204,16 @@ class NotificationService {
     await showNotificationFromFirebase(message);
   }
 
-  // Foreground message handler
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
     await showNotificationFromFirebase(message);
   }
 
-  // Terminated message handler
   static Future<void> _handleTerminatedMessage(RemoteMessage? message) async {
     if (message != null) {
       await showNotificationFromFirebase(message);
     }
   }
 
-  // Show immediate notification
   static Future<void> showNotification({
     required String title,
     required String body,
@@ -168,7 +242,7 @@ class NotificationService {
     );
 
     await _notifications.show(
-      0, // Notification ID
+      0,
       title,
       body,
       notificationDetails,
@@ -176,17 +250,14 @@ class NotificationService {
     );
   }
 
-  // Schedule a notification
   static Future<void> scheduleLocalNotification({
     required String title,
     required String body,
     required DateTime scheduledTime,
     String? payload,
   }) async {
-    final tz.TZDateTime scheduledTz = tz.TZDateTime.from(
-      scheduledTime,
-      tz.local,
-    );
+    final tz.TZDateTime scheduledTz =
+        tz.TZDateTime.from(scheduledTime, tz.local);
 
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
@@ -220,7 +291,6 @@ class NotificationService {
     );
   }
 
-  // Handle Firebase Cloud Messages
   static Future<void> showNotificationFromFirebase(
       RemoteMessage message) async {
     const AndroidNotificationDetails androidDetails =
@@ -252,17 +322,14 @@ class NotificationService {
     );
   }
 
-  // Get FCM token for device
   static Future<String?> getFCMToken() async {
     return await FirebaseMessaging.instance.getToken();
   }
 
-  // Subscribe to topic
   static Future<void> subscribeToTopic(String topic) async {
     await FirebaseMessaging.instance.subscribeToTopic(topic);
   }
 
-  // Unsubscribe from topic
   static Future<void> unsubscribeFromTopic(String topic) async {
     await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
   }

@@ -6,6 +6,7 @@
     "BOLOR",
     "confir",
     "Deletem",
+    "drinkerwater",
     "drinkler",
     "drinklerwater",
     "drumwater",
@@ -29,6 +30,7 @@
     "THINGBLOCK",
     "THINGBLOCKSHADOW",
     "TITLETEXT",
-    "userdevices"
+    "userdevices",
+    "viewmodels"
   ]
 }

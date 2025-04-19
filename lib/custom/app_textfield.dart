@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pigpen_iot/custom/app_icon.dart';
 
-
 class AppTextField extends StatelessWidget {
   final String labelText;
   final Function(String)? onChanged;
@@ -342,7 +341,8 @@ class AppDataField extends StatelessWidget {
           labelStyle: labelStyle,
           filled: true,
           fillColor: colorScheme.surfaceContainer,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           prefixIcon: prefixIconData == null
               ? null
               : AppIcon(
@@ -358,6 +358,81 @@ class AppDataField extends StatelessWidget {
             borderSide: BorderSide.none,
             borderRadius: BorderRadius.circular(10),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class AppDropdownField<T> extends StatelessWidget {
+  final String labelText;
+  final String? errorText;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+  final IconData? prefixIconData;
+  final FloatingLabelBehavior floatingLabelBehavior;
+
+  const AppDropdownField({
+    super.key,
+    required this.labelText,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.errorText,
+    this.prefixIconData,
+    this.floatingLabelBehavior = FloatingLabelBehavior.auto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final spacer = MediaQuery.of(context).size.height * 0.008;
+
+    final labelStyle = TextStyle(
+      fontWeight: FontWeight.w500,
+      fontSize: 14,
+      color: colorScheme.outline,
+    );
+
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: spacer),
+      child: DropdownButtonFormField<T>(
+        value: value,
+        items: items,
+        onChanged: onChanged,
+        icon: const Icon(Icons.arrow_drop_down),
+        decoration: InputDecoration(
+          labelText: labelText,
+          labelStyle: labelStyle,
+          errorText: errorText,
+          filled: true,
+          fillColor: colorScheme.surfaceContainer,
+          floatingLabelBehavior: floatingLabelBehavior,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          prefixIcon: prefixIconData == null
+              ? null
+              : AppIcon(
+                  prefixIconData!,
+                  color: colorScheme.outline,
+                ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          enabledBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        dropdownColor: colorScheme.surfaceContainer,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          color:
+              Theme.of(context).colorScheme.onSurface, // uses correct contrast
         ),
       ),
     );

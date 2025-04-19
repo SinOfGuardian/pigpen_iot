@@ -41,6 +41,7 @@ class MyApp extends ConsumerWidget {
       ),
     );
     return MaterialApp.router(
+      // navigatorKey: navigatorKey, // Removed as MaterialApp.router does not support this parameter
       debugShowCheckedModeBanner: false,
       title: 'PigPen IoT',
       routerConfig: router,

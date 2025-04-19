@@ -1,11 +1,8 @@
 import 'package:intl/intl.dart';
 
 class AppDateFormat extends DateFormat {
- 
-
   AppDateFormat([super.newPattern, super.locale]);
 
-  
   String dayRepresentation(DateTime date) {
     final now = DateTime.now();
     final day = DateTime(date.year, date.month, date.day);
@@ -118,5 +115,13 @@ class AppDateFormat extends DateFormat {
   String monthDayYearFull(DateTime date) => DateFormat.yMMMMd().format(date);
 
   /// Outputs sample: "Jan 1, 2022 at 9:30 PM"
-  String monthDayYearTime(DateTime date) => DateFormat.yMMMd().add_jm().format(date);
+  String monthDayYearTime(DateTime date) =>
+      DateFormat.yMMMd().add_jm().format(date);
+
+  String formattedScheduleLabel(DateTime date) {
+    if (isToday(date)) {
+      return 'Today - ${timeShort(date)}';
+    }
+    return DateFormat('MMM dd yyyy - hh:mm a').format(date);
+  }
 }

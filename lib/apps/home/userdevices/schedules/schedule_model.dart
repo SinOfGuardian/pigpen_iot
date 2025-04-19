@@ -4,5 +4,11 @@ import 'package:flutter/foundation.dart';
 class Schedule {
   final String key;
   final DateTime dateTime;
-  const Schedule({required this.dateTime, required this.key});
+  final String category; // "shower" or "feeding"
+
+  const Schedule({
+    required this.dateTime,
+    required this.key,
+    required this.category,
+  });
 }

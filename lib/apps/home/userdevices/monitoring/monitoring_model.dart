@@ -7,7 +7,7 @@ class DeviceData {
   final int humidity;
   final int heatIndex;
   final double gasDetection;
-  final int drinklerwaterLevel;
+  final int drinkerwaterLevel;
   final int drumwaterLevel;
 
   const DeviceData({
@@ -15,7 +15,7 @@ class DeviceData {
     required this.humidity,
     required this.heatIndex,
     required this.gasDetection,
-    required this.drinklerwaterLevel,
+    required this.drinkerwaterLevel,
     required this.drumwaterLevel,
   });
 
@@ -26,7 +26,7 @@ class DeviceData {
           humidity: 0,
           heatIndex: 0,
           gasDetection: 0,
-          drinklerwaterLevel: 0,
+          drinkerwaterLevel: 0,
           drumwaterLevel: 0);
     }
     return DeviceData(
@@ -34,7 +34,7 @@ class DeviceData {
       humidity: json['humidity'] as int? ?? 0,
       heatIndex: json['heat_index'] as int? ?? 0,
       gasDetection: (json['gas_detection'] as num?)?.toDouble() ?? 0,
-      drinklerwaterLevel: json['drinkler_water_level'] as int? ?? 0,
+      drinkerwaterLevel: json['drinker_water_level'] as int? ?? 0,
       drumwaterLevel: json['drum_water_level'] as int? ?? 0,
     );
   }
@@ -101,7 +101,7 @@ const gasSensor = Sensor(
     // 'soil particles, known as pore spaces. The higher the soil moisture, ',
     );
 
-const drinklerwaterSensor = Sensor(
+const drinkerwaterSensor = Sensor(
   title: 'drink water level',
   suffix: '',
   min: 0,
@@ -120,7 +120,7 @@ const drumwaterSensor = Sensor(
 );
 
 const nextWatering = Sensor(
-  title: 'Next Bath Time',
+  title: 'Next Bath or Feeding Time',
   suffix: '',
   min: 0,
   max: 1,

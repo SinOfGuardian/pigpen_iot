@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart'; // Ensure this is at the top
 import 'package:ionicons/ionicons.dart';
+
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
+import 'package:pigpen_iot/apps/home/userdevices/dashboard/camera_stream_widget.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_viewmodel.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_viewmodel.dart';
@@ -14,7 +18,6 @@ import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
-import 'package:intl/intl.dart'; // Ensure this is at the top
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -38,30 +41,18 @@ class DashboardScreen extends StatelessWidget {
 class UpperSection extends ConsumerWidget {
   const UpperSection({super.key});
 
-  // Widget _graphic(BuildContext context, WidgetRef ref) {
-  //   final screenHeight = MediaQuery.of(context).size.height;
-  //   final thing = ref.watch(activeDeviceProvider)!;
-  //   return OverflowBox(
-  //     alignment: Alignment.center,
-  //     maxHeight: screenHeight * 0.36,
-  //     maxWidth: screenHeight * 0.36,
-  //     child: Hero(
-  //         tag: thing.deviceId, child: AppCachedNetworkImage(thing.graphicUrl)),
+  // Widget _camera(BuildContext context, WidgetRef ref) {
+  //   return Container(
+  //     height: 200,
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[200],
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: const Center(
+  //       child: Text('Camera Section'),
+  //     ),
   //   );
   // }
-
-  Widget _camera(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Center(
-        child: Text('Camera Section'),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,8 +62,17 @@ class UpperSection extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           children: [
-            Expanded(child: _camera(context, ref)),
-            //Expanded(child: _graphic(context, ref)),
+            // Expanded(child: _camera(context, ref)),
+            // Using flutter_mjpeg (simpler implementation)
+            // Expanded(child: _cameraMJPEG(context, ref)),
+
+            // Using mjpeg_stream (more control)
+            Expanded(
+              child: CameraStreamWidget(
+                streamUrl:
+                    'http://192.168.4.1:81/stream', // Replace with your ESP32-CAM stream URL
+              ),
+            ),
           ],
         ),
       ),
@@ -126,7 +126,7 @@ class BottomSection extends ConsumerWidget {
     final deviceProvider = ref.watch(deviceStreamProvider);
     final firebaseService = DeviceFirebase();
     final drumManualProvider = StateProvider<bool>((ref) => false);
-    final drinklerManualProvider = StateProvider<bool>((ref) => false);
+    final drinkerManualProvider = StateProvider<bool>((ref) => false);
 
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
@@ -162,8 +162,8 @@ class BottomSection extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _DataField(
-                      sensor: drinklerwaterSensor,
-                      data: device.drinklerwaterLevel),
+                      sensor: drinkerwaterSensor,
+                      data: device.drinkerwaterLevel),
                 ),
               ],
             ),
@@ -213,13 +213,13 @@ class BottomSection extends ConsumerWidget {
             //  const SizedBox(height: 5),
             Row(
               children: [
-                Text("Drinkler Manual",
+                Text("Drinker Manual",
                     style: Theme.of(context).textTheme.bodyMedium),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
-                  final isDrinklerManual = ref.watch(drinklerManualProvider);
+                  final isDrinkerManual = ref.watch(drinkerManualProvider);
                   return Switch(
-                    value: isDrinklerManual,
+                    value: isDrinkerManual,
                     onChanged: (value) async {
                       final drumLevel =
                           ref.read(deviceStreamProvider).maybeWhen(
@@ -231,17 +231,17 @@ class BottomSection extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(
-                                'Drum is empty! Please refill before activating drinkler.'),
+                                'Drum is empty! Please refill before activating drinker.'),
                             backgroundColor: Colors.red,
                           ),
                         );
                         return;
                       }
 
-                      ref.read(drinklerManualProvider.notifier).state = value;
+                      ref.read(drinkerManualProvider.notifier).state = value;
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
-                        type: 'drinkler',
+                        type: 'drinker',
                         duration: value ? 5 : 0,
                       );
                     },
@@ -260,7 +260,7 @@ class BottomSection extends ConsumerWidget {
                     sensor: nextWatering,
                     data: null,
                     stringData: nextSchedule != null
-                        ? DateFormat('yyyy/MM/dd HH:mm').format(nextSchedule)
+                        ? DateFormat('yyyy/MM/dd HH:mm a').format(nextSchedule)
                         : 'No schedule',
                   ),
                 ),
@@ -454,7 +454,7 @@ class _DataField extends StatelessWidget {
         }
         break;
 
-      case drinklerwaterSensor:
+      case drinkerwaterSensor:
         final drumLevel = ref.watch(deviceStreamProvider).maybeWhen(
             data: (device) => device.drumwaterLevel, orElse: () => null);
 
@@ -524,7 +524,7 @@ class _DataField extends StatelessWidget {
         });
 
         final isWaterSensor =
-            sensor == drumwaterSensor || sensor == drinklerwaterSensor;
+            sensor == drumwaterSensor || sensor == drinkerwaterSensor;
         final showValue = !isWaterSensor;
 
         return Padding(

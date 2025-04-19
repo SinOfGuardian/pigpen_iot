@@ -63,19 +63,31 @@ class ScheduleOperations with InternetConnection {
     return database.ref(path).child(deviceId).orderByValue().onValue;
   }
 
-  Future<void> uploadSchedule(String deviceId, DateTime dateTimePicked) async {
-    // final key = database.ref(path).child(deviceId).push().key;
-    // return database.ref(path).child(deviceId).update({
-    //   dateTimePicked.toString(): dateTimePicked.toString(),
-    // }).timeout(TIMEOUT_TIME);
+  Future<void> uploadSchedule(
+    String deviceId,
+    DateTime dateTimePicked,
+    String category, {
+    required String key,
+  }) async {
+    final database = FirebaseDatabase.instance;
+
     try {
-      await database.ref(path).child(deviceId).update({
-        dateTimePicked.toString().replaceFirst(".", " "):
-            dateTimePicked.toString(),
-      }).timeout(TIMEOUT_TIME);
+      // Save to /realtime/schedules
+      await database.ref('/realtime/schedules/$deviceId/$key').set({
+        'dateTime': dateTimePicked.toIso8601String(),
+        'category': category,
+      }).timeout(const Duration(seconds: 10));
+
+      // Save to /realtime/logs as 'scheduled'
+      await database.ref('/realtime/logs/$deviceId/$key').set({
+        'status': 'scheduled',
+        'category': category,
+        'dateTime': dateTimePicked.toIso8601String(),
+      });
+
+      debugPrint('✅ Schedule and log uploaded with key $key');
     } catch (e) {
-      debugPrint('Error uploading schedule: $e');
-      // Optionally, show an alert or handle the error appropriately
+      debugPrint('❌ Error uploading schedule: $e');
     }
   }
 

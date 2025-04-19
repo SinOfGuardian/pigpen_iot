@@ -38,6 +38,8 @@ dependencies:
   internet_connection_checker: ^3.0.1
   flutter_local_notifications: ^19.0.0
   flutter_timezone: ^4.1.0
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
   #Firebase
   firebase_core: ^3.6.0
@@ -68,6 +70,10 @@ dependencies:
   permission_handler: ^11.4.0
   fl_chart: ^0.70.2
   share_plus: ^10.1.4
+
+  #ESP32 Camera
+  # flutter_mjpeg: ^2.0.4
+  mjpeg_stream: ^1.0.1
 
 dev_dependencies:
   flutter_test:

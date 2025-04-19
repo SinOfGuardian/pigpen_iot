@@ -17,10 +17,12 @@ import 'package:pigpen_iot/auth/registration/registration_view.dart';
 import 'package:pigpen_iot/auth/registration/registration_viewmodel.dart';
 import 'package:pigpen_iot/custom/app_transition_animation.dart';
 import 'package:pigpen_iot/provider/newdevice_provider.dart';
+import 'package:pigpen_iot/services/notification_service.dart';
 
 import 'package:pigpen_iot/splashscreen.dart';
 
 final GoRouter router = GoRouter(
+  navigatorKey: navigatorKey,
   debugLogDiagnostics: true,
   routes: <RouteBase>[
     GoRoute(

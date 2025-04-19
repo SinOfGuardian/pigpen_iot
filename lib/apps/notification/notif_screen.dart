@@ -12,10 +12,15 @@ class NotificationScreen extends StatelessWidget {
         child: ElevatedButton(
           onPressed: () async {
             final now = DateTime.now().add(const Duration(seconds: 5));
+            const testDeviceId = 'testDeviceId';
+            const testScheduleKey = 'testKey123';
+            const testCategory = 'shower';
+
             await NotificationService.scheduleLocalNotification(
               title: 'PigPen Reminder',
-              body: 'Time to wash the pigs!',
-              scheduledTime: now, // 5 seconds from now,
+              body: 'Time to $testCategory the pigs!',
+              scheduledTime: now,
+              payload: '$testDeviceId|$testScheduleKey|$testCategory',
             );
           },
           child: const Text('Send Test Notification (5 sec)'),

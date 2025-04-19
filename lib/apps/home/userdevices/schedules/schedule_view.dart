@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
+import 'package:pigpen_iot/apps/home/userdevices/logs/log_operation.dart';
 import 'package:pigpen_iot/apps/home/userdevices/logs/logs_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_viewmodel.dart';
@@ -223,6 +224,11 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
   Future<bool> submitSchedule() async {
     final database = ScheduleOperations();
     final dateTimePicked = ref.read(dateTimeProvider.notifier).state;
+    final category = ref.read(categoryProvider);
+    final scheduleKey = dateTimePicked
+        .toIso8601String()
+        .replaceAll(":", "-")
+        .replaceAll(".", "-");
 
     // Log the deviceId
     debugPrint('Device ID: $deviceId');
@@ -237,7 +243,13 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
 
     // Save all schedules
     // for (final schedule in schedules) {
-    await database.uploadSchedule(deviceId, dateTimePicked);
+    await database.uploadSchedule(deviceId, dateTimePicked, category,
+        key: scheduleKey);
+
+    // Schedule notification (adjust title/body based on category)
+    final bodyText = category == 'shower'
+        ? 'Time to wash the pigs!'
+        : 'Time to feed the pigs!';
 
     // Convert DateTime to TZDateTime (local time zone)
     final tzScheduledDate = tz.TZDateTime.from(dateTimePicked, tz.local);
@@ -262,10 +274,11 @@ class _CreateSectionState extends ConsumerState<_CreateSection> {
     debugPrint('Scheduled Notification Time: $notificationTime');
 
     await NotificationService.scheduleLocalNotification(
-      title: 'Pig Wash Reminder',
+      title: 'Pig $category Reminder',
       body:
-          'Time to wash the pigs! Scheduled at ${DateFormat('hh:mm a').format(dateTimePicked)}',
+          '$bodyText Scheduled at ${DateFormat('hh:mm a').format(dateTimePicked)}',
       scheduledTime: notificationTime,
+      payload: '$deviceId|$scheduleKey|$category',
     );
 
     debugPrint('Scheduled notification at: $notificationTime');
@@ -389,6 +402,7 @@ class _CreateSectionView
         const SectionTitle('Create schedule', margin: null),
         dateField(context, ref),
         timeField(context, ref),
+        categoryDropdown(ref),
         createButton(context, ref),
       ],
     );
@@ -403,6 +417,8 @@ class _CreateSectionView
             Expanded(flex: 3, child: dateField(context, ref)),
             const SizedBox(width: 10),
             Expanded(flex: 2, child: timeField(context, ref)),
+            const SizedBox(width: 10),
+            Expanded(flex: 2, child: categoryDropdown(ref)),
           ],
         ),
         createButton(context, ref),
@@ -449,6 +465,23 @@ class _CreateSectionView
     );
   }
 
+  Widget categoryDropdown(WidgetRef ref) {
+    return AppDropdownField<String>(
+      labelText: 'Select Category',
+      value: ref.watch(categoryProvider),
+      items: const [
+        DropdownMenuItem(value: 'shower', child: Text('Shower')),
+        DropdownMenuItem(value: 'feeding', child: Text('Feeding')),
+      ],
+      onChanged: (val) {
+        if (val != null) {
+          ref.read(categoryProvider.notifier).state = val;
+        }
+      },
+      prefixIconData: Icons.category,
+    );
+  }
+
   Widget createButton(BuildContext context, WidgetRef ref) {
     return AppFilledButton.small(
       onPressed: () => state.onPressedCreateBtn(context),
@@ -492,11 +525,18 @@ class _ScheduledSectionState extends ConsumerState<_ScheduledSection> {
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
       final schedules = ref.read(schedulesProvider(deviceId)).asData?.value;
       if (schedules == null || schedules.isEmpty) return;
+      //This code is to remove the schedule
+      // final firstSched = schedules.first;
+      // if (firstSched.dateTime
+      //     .add(const Duration(minutes: 1))
+      //     .isBefore(DateTime.now())) {
+      //   removeDueSchedule(firstSched.key);
+      // }
       final firstSched = schedules.first;
       if (firstSched.dateTime
           .add(const Duration(minutes: 1))
           .isBefore(DateTime.now())) {
-        removeDueSchedule(firstSched.key);
+        // _moveToLogsAndRemove(firstSched);
       }
     });
   }
@@ -536,6 +576,27 @@ class _ScheduledSectionState extends ConsumerState<_ScheduledSection> {
 
   @override
   Widget build(BuildContext context) => _ScheduledSectionView(this);
+
+  Future<void> _moveToLogsAndRemove(Schedule schedule) async {
+    final database = ScheduleOperations();
+    final logger = LogOperations();
+
+    await logger.addToLogs(
+      deviceId: deviceId,
+      scheduleKey: schedule.key,
+      category: schedule.category,
+      dateTime: schedule.dateTime,
+      status: 'timeout', // auto timeout
+    );
+
+    await database.deleteSchedule(deviceId, schedule.key);
+
+    if (!mounted) return;
+    context.showSnackBar(
+      'Moved to logs as timeout',
+      theme: SnackbarTheme.success,
+    );
+  }
 }
 
 class _ScheduledSectionView
@@ -619,6 +680,7 @@ class _ScheduledSectionView
                   deviceGraphic: child,
                   databaseKey: schedule.key,
                   dateTime: schedule.dateTime,
+                  category: schedule.category,
                   deviceId: state.deviceId,
                 );
               },
@@ -654,12 +716,14 @@ class _SingleScheduleView extends StatelessWidget with InternetConnection {
   final String deviceId;
   final Widget? deviceGraphic;
   final String databaseKey;
+  final String category;
   final DateTime dateTime;
   const _SingleScheduleView({
     required this.deviceGraphic,
     required this.dateTime,
     required this.databaseKey,
     required this.deviceId,
+    required this.category,
   });
 
   void onTappedSchedule(BuildContext context, DateTime dateTime) {
@@ -725,25 +789,31 @@ class _SingleScheduleView extends StatelessWidget with InternetConnection {
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormatter = AppDateFormat();
 
-    final dateValue = dateFormatter.dayRepresentation(dateTime);
-    final timeValue = dateFormatter.timeShort(dateTime);
+    // final dateValue = dateFormatter.dayRepresentation(dateTime);
+    // final timeValue = dateFormatter.timeShort(dateTime);
     final isSchedisToday = dateFormatter.isToday(dateTime);
     final isSchedisDue = dateTime.isBefore(DateTime.now());
+    // final subtitleText = isSchedisToday
+    //     ? 'Today - ${dateFormatter.timeShort(dateTime)}'
+    //     : dateFormatter.format(dateTime); // fallback
+    final titleText = category.toTitleCase(); // Shower or Feeding
 
     return Material(
       child: ListTile(
         dense: true,
         onTap: () => onTappedSchedule(context, dateTime),
         title: Text(
-          timeValue,
+          titleText,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          dateValue.toCapitalizeFirst(),
+          AppDateFormat().formattedScheduleLabel(dateTime),
           style: TextStyle(
             fontSize: 13,
             fontWeight: isSchedisToday ? FontWeight.w500 : FontWeight.normal,
-            color: isSchedisToday ? colorScheme.primary : Colors.grey,
+            color: isSchedisToday
+                ? Theme.of(context).colorScheme.primary
+                : Colors.grey,
           ),
         ),
         leading: SizedBox(
@@ -787,3 +857,5 @@ class _SingleScheduleView extends StatelessWidget with InternetConnection {
     );
   }
 }
+
+final categoryProvider = StateProvider<String>((ref) => 'shower');
