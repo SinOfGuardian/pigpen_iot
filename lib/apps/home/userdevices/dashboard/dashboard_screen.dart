@@ -17,7 +17,6 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
-
 import 'package:pigpen_iot/services/notification_service.dart';
 
 class DashboardScreen extends StatelessWidget {

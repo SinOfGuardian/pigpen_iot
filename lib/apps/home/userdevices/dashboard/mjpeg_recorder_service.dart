@@ -1,52 +1,60 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart';
 
 class MJPEGRecorderService {
+  final String sessionId;
   final String streamUrl;
-  final List<File> _recordedFrames = [];
+  final Duration interval;
+  bool _isRecording = false;
+  int _frameCount = 0;
 
-  MJPEGRecorderService({required this.streamUrl});
+  MJPEGRecorderService({
+    required this.sessionId,
+    required this.streamUrl,
+    this.interval = const Duration(seconds: 1),
+  });
 
   Future<void> startRecording() async {
-    _recordedFrames.clear();
-  }
+    _isRecording = true;
+    _frameCount = 0;
 
-  Future<void> stopRecording() async {
-    final dir = Directory.systemTemp.createTempSync();
-    final folderPath =
-        '${dir.path}/recordings/${DateTime.now().millisecondsSinceEpoch}';
-    final folder = Directory(folderPath)..createSync(recursive: true);
+    while (_isRecording) {
+      try {
+        final response = await http.get(Uri.parse(streamUrl));
+        if (response.statusCode == 200) {
+          final bytes = response.bodyBytes;
+          await _uploadFrame(bytes);
+          _frameCount++;
+        }
+      } catch (e) {
+        print("Frame capture error: $e");
+      }
 
-    for (int i = 0; i < _recordedFrames.length; i++) {
-      final frame = _recordedFrames[i];
-      final ref = FirebaseStorage.instance.ref('recordings/frame_$i.jpg');
-      await ref.putFile(frame);
+      await Future.delayed(interval);
     }
+
+    await _uploadDoneMarker();
   }
 
-  Future<void> recordSnapshot() async {
-    final bytes = await http.readBytes(Uri.parse(streamUrl));
-    final filename =
-        "${DateTime.now().millisecondsSinceEpoch}_${const Uuid().v4()}.jpg";
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(bytes);
-    _recordedFrames.add(file);
+  void stopRecording() {
+    _isRecording = false;
   }
 
-  Future<String> takeSnapshot() async {
-    final bytes = await http.readBytes(Uri.parse(streamUrl));
-    final filename =
-        "snapshot_${DateTime.now().millisecondsSinceEpoch}_${const Uuid().v4()}.jpg";
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(bytes);
+  Future<void> _uploadFrame(Uint8List bytes) async {
+    final paddedNumber = _frameCount.toString().padLeft(3, '0');
+    final fileName = 'photo_$paddedNumber.jpg';
 
-    final ref = FirebaseStorage.instance.ref('snapshots/$filename');
-    await ref.putFile(file);
-    return await ref.getDownloadURL();
+    final storageRef =
+        FirebaseStorage.instance.ref().child('recordings/$sessionId/$fileName');
+
+    await storageRef.putData(
+        bytes, SettableMetadata(contentType: 'image/jpeg'));
+  }
+
+  Future<void> _uploadDoneMarker() async {
+    final ref =
+        FirebaseStorage.instance.ref().child('recordings/$sessionId/done.txt');
+    await ref.putString('');
   }
 }
