@@ -62,15 +62,10 @@ class UpperSection extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           children: [
-            // Expanded(child: _camera(context, ref)),
-            // Using flutter_mjpeg (simpler implementation)
-            // Expanded(child: _cameraMJPEG(context, ref)),
-
-            // Using mjpeg_stream (more control)
             Expanded(
               child: CameraStreamWidget(
-                streamUrl:
-                    'http://192.168.100.210/mjpeg', // Replace with your ESP32-CAM stream URL
+                streamUrl: 'http://192.168.100.210/stream',
+                snapshotUrl: 'http://192.168.100.210/jpg',
               ),
             ),
           ],
