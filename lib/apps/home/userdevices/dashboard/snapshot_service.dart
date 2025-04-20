@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
 
 class SnapshotService {
   static Future<void> takeSnapshotAndUpload({
@@ -18,8 +19,9 @@ class SnapshotService {
       }
 
       final Uint8List bytes = response.bodyBytes;
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'snapshot_$timestamp.jpg';
+      final now = DateTime.now();
+      final formatted = DateFormat('MM-dd-yyyy_HH-mm-ss').format(now);
+      final fileName = 'snapshot_$formatted.jpg';
 
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/$fileName');
