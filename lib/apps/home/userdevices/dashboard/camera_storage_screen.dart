@@ -1,5 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'snapshot_viewer_screen.dart';
 
 class SnapshotImage {
@@ -21,6 +26,8 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
   late Future<List<SnapshotImage>> _imageFutures;
   final Set<String> _selectedPaths = {};
   bool _isSelectionMode = false;
+  bool _isGridView = true;
+  List<SnapshotImage> _allImages = [];
 
   @override
   void initState() {
@@ -52,6 +59,7 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
     }));
 
     images.sort((a, b) => b.date.compareTo(a.date));
+    _allImages = images;
     return images;
   }
 
@@ -76,10 +84,46 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
   }
 
   Future<void> _deleteSelected() async {
-    for (final path in _selectedPaths) {
-      await FirebaseStorage.instance.ref(path).delete();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Selected"),
+        content: const Text("Are you sure you want to delete these snapshots?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Delete")),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      for (final path in _selectedPaths) {
+        await FirebaseStorage.instance.ref(path).delete();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Snapshots deleted successfully.")),
+      );
+      _refreshImages();
     }
-    _refreshImages();
+  }
+
+  Future<void> _shareSelected() async {
+    final files = _allImages.where((img) => _selectedPaths.contains(img.path));
+    final tempDir = await getTemporaryDirectory();
+    final filePaths = <String>[];
+
+    for (final image in files) {
+      final response = await http.get(Uri.parse(image.url));
+      final file = File('${tempDir.path}/${image.path.split('/').last}');
+      await file.writeAsBytes(response.bodyBytes);
+      filePaths.add(file.path);
+    }
+
+    await Share.shareXFiles(filePaths.map((p) => XFile(p)).toList());
   }
 
   @override
@@ -90,11 +134,21 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
             ? "${_selectedPaths.length} selected"
             : "Camera Storage"),
         actions: [
-          if (_isSelectionMode)
+          IconButton(
+            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+            onPressed: () => setState(() => _isGridView = !_isGridView),
+          ),
+          if (_isSelectionMode) ...[
+            IconButton(
+              icon: const Icon(Icons.share),
+              onPressed: _selectedPaths.isEmpty ? null : () => _shareSelected(),
+            ),
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: _selectedPaths.isEmpty ? null : _deleteSelected,
+              onPressed:
+                  _selectedPaths.isEmpty ? null : () => _deleteSelected(),
             ),
+          ]
         ],
       ),
       body: FutureBuilder<List<SnapshotImage>>(
@@ -127,55 +181,94 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: entry.value.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final image = entry.value[index];
-                      final isSelected = _selectedPaths.contains(image.path);
+                  _isGridView
+                      ? GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: entry.value.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                          itemBuilder: (context, index) {
+                            final image = entry.value[index];
+                            final isSelected =
+                                _selectedPaths.contains(image.path);
 
-                      return GestureDetector(
-                        onLongPress: () {
-                          setState(() => _isSelectionMode = true);
-                          _toggleSelect(image.path);
-                        },
-                        onTap: () {
-                          if (_isSelectionMode) {
-                            _toggleSelect(image.path);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => SnapshotViewerScreen(
-                                  imageUrl: image.url,
-                                  storagePath: image.path,
-                                ),
+                            return GestureDetector(
+                              onLongPress: () {
+                                setState(() => _isSelectionMode = true);
+                                _toggleSelect(image.path);
+                              },
+                              onTap: () {
+                                if (_isSelectionMode) {
+                                  _toggleSelect(image.path);
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SnapshotViewerScreen(
+                                        imageUrl: image.url,
+                                        storagePath: image.path,
+                                      ),
+                                    ),
+                                  ).then((_) => _refreshImages());
+                                }
+                              },
+                              child: Stack(
+                                children: [
+                                  Image.network(image.url, fit: BoxFit.cover),
+                                  if (isSelected)
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: Icon(Icons.check_circle,
+                                          color: Colors.blueAccent
+                                              .withOpacity(0.9)),
+                                    ),
+                                ],
                               ),
-                            ).then((_) => _refreshImages());
-                          }
-                        },
-                        child: Stack(
-                          children: [
-                            Image.network(image.url, fit: BoxFit.cover),
-                            if (isSelected)
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: Icon(Icons.check_circle,
-                                    color: Colors.blueAccent.withOpacity(0.9)),
-                              ),
-                          ],
+                            );
+                          },
+                        )
+                      : Column(
+                          children: entry.value.map((image) {
+                            final isSelected =
+                                _selectedPaths.contains(image.path);
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 4, horizontal: 8),
+                              leading: Image.network(image.url,
+                                  width: 60, height: 60),
+                              title: Text(image.path.split('/').last),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_circle,
+                                      color: Colors.blueAccent)
+                                  : null,
+                              onLongPress: () {
+                                setState(() => _isSelectionMode = true);
+                                _toggleSelect(image.path);
+                              },
+                              onTap: () {
+                                if (_isSelectionMode) {
+                                  _toggleSelect(image.path);
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SnapshotViewerScreen(
+                                        imageUrl: image.url,
+                                        storagePath: image.path,
+                                      ),
+                                    ),
+                                  ).then((_) => _refreshImages());
+                                }
+                              },
+                            );
+                          }).toList(),
                         ),
-                      );
-                    },
-                  ),
                 ];
               }).toList(),
             ),
