@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mjpeg_stream/mjpeg_stream.dart';
+import 'package:pigpen_iot/apps/home/userdevices/dashboard/camera_storage_screen.dart';
 
 import 'package:pigpen_iot/apps/home/userdevices/dashboard/snapshot_service.dart';
 
@@ -192,6 +193,18 @@ class _CameraStreamWidgetState extends ConsumerState<CameraStreamWidget> {
                             onPressed: () => ref
                                 .read(_cameraBlurredProvider.notifier)
                                 .state = !isBlurred,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.folder_open_outlined),
+                            color: Colors.white,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const CameraStorageScreen(),
+                                ),
+                              );
+                            },
                           ),
                           IconButton(
                             icon: const Icon(Icons.fullscreen),

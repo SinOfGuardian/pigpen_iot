@@ -79,8 +79,8 @@ class BottomSection extends ConsumerWidget {
   const BottomSection({super.key});
 
   Widget _deviceName(BuildContext context, String? deviceName, WidgetRef ref) {
-    final isFavorited = ref.watch(favoriteProvider);
-    final notifier = ref.read(favoriteProvider.notifier);
+    // final isFavorited = ref.watch(favoriteProvider);
+    //final notifier = ref.read(favoriteProvider.notifier);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,11 +97,11 @@ class BottomSection extends ConsumerWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => notifier.state = !isFavorited,
+          onTap: () => (),
           child: Icon(
-            isFavorited ? Ionicons.heart : Ionicons.heart_outline,
+            Ionicons.settings_outline,
             size: 30,
-            color: isFavorited ? Colors.red : null,
+            color: Colors.black.withOpacity(1),
           ),
         ),
       ],
