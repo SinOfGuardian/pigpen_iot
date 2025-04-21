@@ -60,7 +60,7 @@ class Sensor {
 const tempSensor = Sensor(
   title: 'temperature',
   suffix: '°C',
-  min: 20,
+  min: 10,
   max: 60,
   lineColor: Colors.orange,
   noteMessage: 'The degree or intensity of heat measured outside of the device '
@@ -84,7 +84,7 @@ const heatIndexSensor = Sensor(
   title: 'heat index',
   suffix: '°C',
   min: 0,
-  max: 60,
+  max: 100,
   lineColor: Colors.red,
   noteMessage: 'The heat index is a measure of how hot it really feels when '
       'relative humidity is factored in with the actual air temperature.',

@@ -391,9 +391,9 @@ class _DataField extends StatelessWidget {
 
   String _getHeatIndexStatus(num? heatIndex) {
     if (heatIndex == null) return '';
-    if (heatIndex < 25) return ' - Safe';
-    if (heatIndex < 28) return ' - Warning';
-    if (heatIndex < 32) return ' - Danger';
+    if (heatIndex <= 28) return ' - Safe';
+    if (heatIndex <= 48) return ' - Warning';
+    if (heatIndex <= 60) return ' - Danger';
     return ' - Emergency';
   }
 
@@ -409,7 +409,7 @@ class _DataField extends StatelessWidget {
 
     switch (sensor) {
       case gasSensor:
-        if (data! > 50) {
+        if (data! > 20) {
           notificationTitle = '⚠️ High Ammonia Level!';
           notificationBody =
               'Ammonia level is very high (${data!.toStringAsFixed(1)} ppm).';
@@ -418,12 +418,12 @@ class _DataField extends StatelessWidget {
         break;
 
       case heatIndexSensor:
-        if (data! >= 32) {
+        if (data! >= 65) {
           notificationTitle = '🚨 Heat Emergency!';
           notificationBody =
               'Heat index is dangerously high (${data!.toStringAsFixed(1)}°C).';
           shouldNotify = true;
-        } else if (data! >= 28 && !(notificationState[sensorKey] ?? false)) {
+        } else if (data! >= 48 && !(notificationState[sensorKey] ?? false)) {
           notificationTitle = '⚠️ Heat Warning!';
           notificationBody =
               'Heat index is high (${data!.toStringAsFixed(1)}°C).';
@@ -458,7 +458,7 @@ class _DataField extends StatelessWidget {
         break;
 
       case tempSensor:
-        if (data! > 35) {
+        if (data! > 40) {
           notificationTitle = '🌡️ High Temperature!';
           notificationBody =
               'Temperature is very high (${data!.toStringAsFixed(1)}°C).';
