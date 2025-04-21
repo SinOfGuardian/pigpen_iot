@@ -1,5 +1,13 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'snapshot_viewer_screen.dart';
+
+class SnapshotImage {
+  final String url;
+  final String path;
+
+  SnapshotImage({required this.url, required this.path});
+}
 
 class CameraStorageScreen extends StatefulWidget {
   const CameraStorageScreen({super.key});
@@ -9,15 +17,15 @@ class CameraStorageScreen extends StatefulWidget {
 }
 
 class _CameraStorageScreenState extends State<CameraStorageScreen> {
-  late Future<List<String>> _imageUrls;
+  late Future<List<SnapshotImage>> _imageFutures;
 
   @override
   void initState() {
     super.initState();
-    _imageUrls = _loadSnapshotUrls();
+    _imageFutures = _loadSnapshotImages();
   }
 
-  Future<List<String>> _loadSnapshotUrls() async {
+  Future<List<SnapshotImage>> _loadSnapshotImages() async {
     final ListResult result =
         await FirebaseStorage.instance.ref("snapshots").listAll();
 
@@ -26,16 +34,20 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
           item.name.toLowerCase().endsWith('.jpeg');
     });
 
-    final urls = await Future.wait(files.map((item) => item.getDownloadURL()));
-    return urls;
+    final images = await Future.wait(files.map((ref) async {
+      final url = await ref.getDownloadURL();
+      return SnapshotImage(url: url, path: ref.fullPath);
+    }));
+
+    return images;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Snapshot Gallery")),
-      body: FutureBuilder<List<String>>(
-        future: _imageUrls,
+      body: FutureBuilder<List<SnapshotImage>>(
+        future: _imageFutures,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -45,8 +57,8 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
                 child: Text('Error loading snapshots: ${snapshot.error}'));
           }
 
-          final urls = snapshot.data!;
-          if (urls.isEmpty) {
+          final images = snapshot.data!;
+          if (images.isEmpty) {
             return const Center(child: Text("No snapshots found."));
           }
 
@@ -57,11 +69,25 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
             ),
-            itemCount: urls.length,
+            itemCount: images.length,
             itemBuilder: (context, index) {
-              return Image.network(
-                urls[index],
-                fit: BoxFit.cover,
+              final image = images[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SnapshotViewerScreen(
+                        imageUrl: image.url,
+                        storagePath: image.path,
+                      ),
+                    ),
+                  );
+                },
+                child: Image.network(
+                  image.url,
+                  fit: BoxFit.cover,
+                ),
               );
             },
           );
