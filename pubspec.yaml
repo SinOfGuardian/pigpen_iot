@@ -78,6 +78,7 @@ dependencies:
   # flutter_mjpeg: ^2.0.4
   mjpeg_stream: ^1.0.1
   video_player: ^2.9.5
+  firebase_app_check: ^0.3.2+5
 
 dev_dependencies:
   flutter_test:

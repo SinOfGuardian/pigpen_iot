@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:pigpen_iot/services/notification_service.dart';
 import 'package:pigpen_iot/router.dart';
 import 'package:pigpen_iot/modules/sharedprefs.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:timezone/data/latest.dart' as tz;
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -25,6 +27,14 @@ Future<void> main() async {
   tz.initializeTimeZones();
   await NotificationService.init();
 
+  // 👇 Automatically uses Play Integrity if SHA-256 is valid in Firebase
+  await FirebaseAppCheck.instance.activate(
+    androidProvider:
+        kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+  );
+
+  print("✅ Firebase App Check activated in debug mode");
+  await Future.delayed(const Duration(milliseconds: 300));
   runApp(const ProviderScope(child: MyApp()));
 }
 
