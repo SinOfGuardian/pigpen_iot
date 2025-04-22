@@ -47,7 +47,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.pigpen_iot"
-        minSdk = 23 // Minimum SDK version for notifications
+        minSdk = 24 // Minimum SDK version for notifications
         targetSdk = 35 // Update to the latest targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
