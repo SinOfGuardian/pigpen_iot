@@ -83,6 +83,24 @@ class DeviceFirebase {
         .onValue
         .map((event) => (event.snapshot.value ?? 0) as int);
   }
+
+  Stream<Map<String, dynamic>> getParameterStream(String deviceId) {
+    return _database.ref('devices/$deviceId/parameters').onValue.map((event) {
+      final data = event.snapshot.value;
+      if (data == null || data is! Map) {
+        return <String, dynamic>{}; // return empty map to prevent crash
+      }
+      return Map<String, dynamic>.from(data as Map);
+    });
+  }
+
+  Future<void> updateParameter({
+    required String deviceId,
+    required String key,
+    required dynamic value,
+  }) async {
+    await _database.ref('devices/$deviceId/parameters/$key').set(value);
+  }
 }
 
 class ScheduleOperations with InternetConnection {

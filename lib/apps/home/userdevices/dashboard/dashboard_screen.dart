@@ -6,7 +6,7 @@ import 'package:ionicons/ionicons.dart';
 
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 import 'package:pigpen_iot/apps/home/userdevices/dashboard/camera_stream_widget.dart';
-import 'package:pigpen_iot/apps/home/userdevices/dashboard/control_panel_modal.dart';
+import 'package:pigpen_iot/apps/home/userdevices/dashboard/control_panel_screen.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_viewmodel.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_viewmodel.dart';
@@ -101,8 +101,12 @@ class BottomSection extends ConsumerWidget {
         ),
         GestureDetector(
           onTap: () {
-            showControlPanelModal(
-                context, deviceId); // ← pass the known deviceId
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ControlPanelScreen(deviceId: deviceId),
+              ),
+            );
           },
           child: Icon(
             Ionicons.settings_outline,
@@ -129,6 +133,7 @@ class BottomSection extends ConsumerWidget {
     final drumManualProvider = StateProvider<bool>((ref) => false);
     final drinkerManualProvider = StateProvider<bool>((ref) => false);
     final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
+
     final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
 
     //bool isDrinklerManual = false;

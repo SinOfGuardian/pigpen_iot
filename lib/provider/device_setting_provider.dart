@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/modules/database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final localDrinkerDurationProvider =
@@ -27,4 +28,9 @@ class DurationNotifier extends StateNotifier<int> {
     await prefs.setInt(key, value);
     state = value;
   }
+
+  final parameterStreamProvider =
+      StreamProvider.family<Map<String, dynamic>, String>((ref, deviceId) {
+    return DeviceFirebase().getParameterStream(deviceId);
+  });
 }
