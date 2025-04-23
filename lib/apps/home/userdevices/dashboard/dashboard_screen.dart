@@ -181,8 +181,10 @@ class BottomSection extends ConsumerWidget {
             // 🔘 Manual Controls
             Row(
               children: [
-                Text("Sprinkler Manual",
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  "Sprinkler Manual (${localSprinklerDuration}s)",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
                   final isDrumManual = ref.watch(drumManualProvider);
@@ -221,8 +223,10 @@ class BottomSection extends ConsumerWidget {
             //  const SizedBox(height: 5),
             Row(
               children: [
-                Text("Drinker Manual",
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  "Drinker Manual (${localDrinkerDuration}s)",
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
                   final isDrinkerManual = ref.watch(drinkerManualProvider);
