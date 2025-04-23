@@ -101,7 +101,8 @@ class BottomSection extends ConsumerWidget {
         ),
         GestureDetector(
           onTap: () {
-            (); // ← pass the known deviceId
+            showControlPanelModal(
+                context, deviceId); // ← pass the known deviceId
           },
           child: Icon(
             Ionicons.settings_outline,
@@ -127,8 +128,8 @@ class BottomSection extends ConsumerWidget {
     final firebaseService = DeviceFirebase();
     final drumManualProvider = StateProvider<bool>((ref) => false);
     final drinkerManualProvider = StateProvider<bool>((ref) => false);
-    // final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
-    // final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
+    final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
+    final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
 
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
@@ -204,8 +205,7 @@ class BottomSection extends ConsumerWidget {
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
                         type: 'sprinkler',
-                        duration: value ? 5 : 0,
-                        //localSprinklerDuration
+                        duration: value ? localSprinklerDuration : 0,
                       );
                     },
                   );
@@ -245,8 +245,7 @@ class BottomSection extends ConsumerWidget {
                       await firebaseService.setManualDuration(
                         deviceId: deviceId,
                         type: 'drinker',
-                        duration: value ? 5 : 0,
-                        //localDrinkerDuration
+                        duration: value ? localDrinkerDuration : 0,
                       );
                     },
                   );
