@@ -48,26 +48,35 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Device Control Panel')),
       body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(parameterStreamProvider(deviceId));
-        },
+        onRefresh: () async =>
+            ref.invalidate(parameterStreamProvider(deviceId)),
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // 🔧 Mode Display
+            // 🔧 Hardware Mode Switch
             StreamBuilder<String>(
               stream: firebaseService.getModeStream(deviceId),
               builder: (context, snapshot) {
                 final mode = snapshot.data ?? 'production';
+                final isDemo = mode == 'demo';
+
                 return ListTile(
                   title: const Text("Hardware Mode"),
-                  subtitle: Text("Current mode: $mode"),
-                  trailing: Text(
-                    mode.toUpperCase(),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: mode == 'demo' ? Colors.orange : Colors.green,
-                    ),
+                  subtitle: Text(isDemo ? "Demo Mode" : "Production Mode"),
+                  trailing: Switch(
+                    value: isDemo,
+                    onChanged: (value) async {
+                      final newMode = value ? 'demo' : 'production';
+                      final confirmed = await _confirmAction(
+                        context,
+                        "Switch Mode",
+                        "Are you sure you want to switch to $newMode mode?",
+                      );
+                      if (confirmed) {
+                        await firebaseService.setMode(deviceId, newMode);
+                        setState(() {}); // Refresh UI
+                      }
+                    },
                   ),
                 );
               },
@@ -126,13 +135,13 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               data: (params) => Column(
                 children: [
                   _buildParamEditor("Heat Index", "heatindex_trigger_value",
-                      params, isEditMode, firebaseService),
+                      params, isEditMode, 20, 100),
                   _buildParamEditor("Temperature", "temp_trigger_value", params,
-                      isEditMode, firebaseService),
+                      isEditMode, 10, 50),
                   _buildParamEditor("PPM Min", "ppm_trigger_min_value", params,
-                      isEditMode, firebaseService),
+                      isEditMode, 0, 50),
                   _buildParamEditor("PPM Max", "ppm_trigger_max_value", params,
-                      isEditMode, firebaseService),
+                      isEditMode, 10, 100),
                 ],
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -169,16 +178,18 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
     String key,
     Map<String, dynamic> params,
     bool editable,
-    DeviceFirebase firebaseService,
+    num min,
+    num max,
   ) {
     final controller =
         TextEditingController(text: params[key]?.toString() ?? '');
+    final currentValue = params[key]?.toString() ?? 'N/A';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Expanded(child: Text(label)),
+          Expanded(child: Text("$label ($currentValue)")),
           SizedBox(
             width: 100,
             child: TextField(
@@ -190,18 +201,32 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                 border: OutlineInputBorder(),
               ),
               onSubmitted: (val) async {
-                final numValue = num.tryParse(val);
-                if (numValue != null) {
-                  await firebaseService.updateParameter(
-                    deviceId: widget.deviceId,
-                    key: key,
-                    value: numValue,
-                  );
-                  ref.invalidate(parameterStreamProvider(widget.deviceId));
+                final parsed = num.tryParse(val);
+                if (parsed == null || parsed < min || parsed > max) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$label updated to $numValue')),
+                    SnackBar(
+                        content: Text(
+                            "Invalid input. $label must be between $min and $max.")),
                   );
+                  return;
                 }
+
+                final confirmed = await _confirmAction(
+                  context,
+                  "Confirm Change",
+                  "Are you sure you want to set $label to $parsed?",
+                );
+                if (!confirmed) return;
+
+                await DeviceFirebase().updateParameter(
+                  deviceId: widget.deviceId,
+                  key: key,
+                  value: parsed,
+                );
+                ref.invalidate(parameterStreamProvider(widget.deviceId));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$label updated to $parsed')),
+                );
               },
             ),
           ),

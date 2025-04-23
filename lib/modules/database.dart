@@ -85,11 +85,12 @@ class DeviceFirebase {
   }
 
   Stream<Map<String, dynamic>> getParameterStream(String deviceId) {
-    return _database.ref('devices/$deviceId/parameters').onValue.map((event) {
+    return _database
+        .ref('/realtime/devices/$deviceId/parameters')
+        .onValue
+        .map((event) {
       final data = event.snapshot.value;
-      if (data == null || data is! Map) {
-        return <String, dynamic>{}; // return empty map to prevent crash
-      }
+      if (data == null || data is! Map) return <String, dynamic>{};
       return Map<String, dynamic>.from(data as Map);
     });
   }
@@ -99,7 +100,9 @@ class DeviceFirebase {
     required String key,
     required dynamic value,
   }) async {
-    await _database.ref('devices/$deviceId/parameters/$key').set(value);
+    await _database
+        .ref('/realtime/devices/$deviceId/parameters/$key')
+        .set(value);
   }
 }
 
