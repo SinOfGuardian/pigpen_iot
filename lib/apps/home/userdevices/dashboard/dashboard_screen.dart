@@ -6,6 +6,7 @@ import 'package:ionicons/ionicons.dart';
 
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 import 'package:pigpen_iot/apps/home/userdevices/dashboard/camera_stream_widget.dart';
+import 'package:pigpen_iot/apps/home/userdevices/dashboard/control_panel_modal.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_model.dart';
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_viewmodel.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_viewmodel.dart';
@@ -17,6 +18,7 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
+import 'package:pigpen_iot/provider/device_setting_provider.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -78,7 +80,8 @@ class UpperSection extends ConsumerWidget {
 class BottomSection extends ConsumerWidget {
   const BottomSection({super.key});
 
-  Widget _deviceName(BuildContext context, String? deviceName, WidgetRef ref) {
+  Widget _deviceName(BuildContext context, String? deviceName, String deviceId,
+      WidgetRef ref) {
     // final isFavorited = ref.watch(favoriteProvider);
     //final notifier = ref.read(favoriteProvider.notifier);
 
@@ -97,7 +100,9 @@ class BottomSection extends ConsumerWidget {
           ),
         ),
         GestureDetector(
-          onTap: () => (),
+          onTap: () {
+            (); // ← pass the known deviceId
+          },
           child: Icon(
             Ionicons.settings_outline,
             size: 30,
@@ -122,6 +127,8 @@ class BottomSection extends ConsumerWidget {
     final firebaseService = DeviceFirebase();
     final drumManualProvider = StateProvider<bool>((ref) => false);
     final drinkerManualProvider = StateProvider<bool>((ref) => false);
+    // final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
+    // final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
 
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
@@ -198,6 +205,7 @@ class BottomSection extends ConsumerWidget {
                         deviceId: deviceId,
                         type: 'sprinkler',
                         duration: value ? 5 : 0,
+                        //localSprinklerDuration
                       );
                     },
                   );
@@ -238,6 +246,7 @@ class BottomSection extends ConsumerWidget {
                         deviceId: deviceId,
                         type: 'drinker',
                         duration: value ? 5 : 0,
+                        //localDrinkerDuration
                       );
                     },
                   );
@@ -278,7 +287,8 @@ class BottomSection extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _deviceName(context, userDevice?.deviceName, ref),
+            _deviceName(context, userDevice?.deviceName,
+                userDevice?.deviceId ?? '?', ref),
             Expanded(
               child: _dataSection(context, ref),
             ),

@@ -20,22 +20,60 @@ class DeviceFirebase {
         DeviceData.fromJson(event.snapshot.value as Map<Object?, Object?>?));
   }
 
+  /// ✅ Set mode ("demo" or "production")
+  Future<void> setMode(String deviceId, String mode) async {
+    await _database.ref('$_path/$deviceId/variables').update({'mode': mode});
+  }
+
+  /// ✅ Get mode as a stream
+  Stream<String> getModeStream(String deviceId) {
+    return _database
+        .ref('$_path/$deviceId/variables/mode')
+        .onValue
+        .map((event) => event.snapshot.value?.toString() ?? 'production');
+  }
+
+  /// ✅ Restart ESP32
+  Future<void> restartESP32(String deviceId) async {
+    await _database
+        .ref('$_path/$deviceId/variables')
+        .update({'esp_command': 'esp_restart'});
+  }
+
+  /// ✅ Set manual ON duration (drinker/sprinkler)
   Future<void> setManualDuration({
     required String deviceId,
-    required String type, // "drinkler" or "drum"
-    required int duration, // e.g. 0 to 5
+    required String type, // "drinker" or "sprinkler"
+    required int duration,
   }) async {
     await _database
         .ref('$_path/$deviceId/variables/manual_${type}_duration')
         .set(duration);
   }
 
-  Future<void> updateDeviceName(String deviceId, String newName) async {
-    await FirebaseDatabase.instance.ref('devices/$deviceId').update({
-      'deviceName': newName,
-    });
+  /// ✅ Get current duration as stream
+  Stream<int> manualDurationStream(String deviceId, String type) {
+    return _database
+        .ref('$_path/$deviceId/variables/manual_${type}_duration')
+        .onValue
+        .map((event) =>
+            int.tryParse(event.snapshot.value?.toString() ?? '0') ?? 0);
   }
 
+  /// ✅ Get ESP command stream (optional)
+  Stream<String> espCommandStream(String deviceId) {
+    return _database
+        .ref('$_path/$deviceId/variables/esp_command')
+        .onValue
+        .map((event) => event.snapshot.value?.toString() ?? '.');
+  }
+
+  /// ✅ Update Device Name
+  Future<void> updateDeviceName(String deviceId, String newName) async {
+    await _database.ref('devices/$deviceId').update({'deviceName': newName});
+  }
+
+  /// ✅ Manual status stream (already existed)
   Stream<int> manualStatusStream({
     required String deviceId,
     required String type,

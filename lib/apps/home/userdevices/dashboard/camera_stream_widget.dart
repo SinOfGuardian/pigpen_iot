@@ -226,8 +226,9 @@ class _CameraStreamWidgetState extends ConsumerState<CameraStreamWidget> {
                       ),
                       child: Text(
                         latency == -1 ? "No Signal" : "$latency ms",
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                            color: Color.fromARGB(216, 255, 255, 255),
+                            fontSize: 10),
                       ),
                     ),
                   ),
