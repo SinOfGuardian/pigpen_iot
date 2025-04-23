@@ -18,6 +18,7 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
+import 'package:pigpen_iot/provider/device_parameters_provider.dart';
 import 'package:pigpen_iot/provider/device_setting_provider.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
 
@@ -135,6 +136,10 @@ class BottomSection extends ConsumerWidget {
     final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
 
     final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
+    final sprinklerDurationAsync =
+        ref.watch(sprinklerDurationStreamProvider(deviceId));
+    final drinkerDurationAsync =
+        ref.watch(drinkerDurationStreamProvider(deviceId));
 
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
@@ -181,9 +186,11 @@ class BottomSection extends ConsumerWidget {
             // 🔘 Manual Controls
             Row(
               children: [
-                Text(
-                  "Sprinkler Manual (${localSprinklerDuration}s)",
-                  style: Theme.of(context).textTheme.bodyMedium,
+                sprinklerDurationAsync.when(
+                  data: (duration) => Text("Sprinkler Manual (${duration}s)",
+                      style: Theme.of(context).textTheme.bodyMedium),
+                  loading: () => const Text("Sprinkler Manual (...)"),
+                  error: (_, __) => const Text("Sprinkler Manual"),
                 ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
@@ -223,9 +230,11 @@ class BottomSection extends ConsumerWidget {
             //  const SizedBox(height: 5),
             Row(
               children: [
-                Text(
-                  "Drinker Manual (${localDrinkerDuration}s)",
-                  style: Theme.of(context).textTheme.bodyMedium,
+                drinkerDurationAsync.when(
+                  data: (duration) => Text("Drinker Manual (${duration}s)",
+                      style: Theme.of(context).textTheme.bodyMedium),
+                  loading: () => const Text("Drinker Manual (...)"),
+                  error: (_, __) => const Text("Drinker Manual"),
                 ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
