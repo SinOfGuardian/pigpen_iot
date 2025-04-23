@@ -412,7 +412,8 @@ class _DataField extends StatelessWidget {
   }
 
   // Improved notification logic
-  void _checkAndTriggerNotification(BuildContext context, WidgetRef ref) {
+  void _checkAndTriggerNotification(
+      BuildContext context, WidgetRef ref, Map<String, dynamic> params) {
     if (data == null) return;
 
     final notificationState = ref.read(notificationStateProvider);
@@ -421,76 +422,53 @@ class _DataField extends StatelessWidget {
     String notificationTitle = '';
     String notificationBody = '';
 
+    // Use params as dynamic thresholds
+    final hiLimit =
+        num.tryParse(params['heatindex_trigger_value']?.toString() ?? '') ?? 66;
+    final ppmMin =
+        num.tryParse(params['ppm_trigger_min_value']?.toString() ?? '') ?? 21;
+    final ppmMax =
+        num.tryParse(params['ppm_trigger_max_value']?.toString() ?? '') ?? 26;
+    final tempLimit =
+        num.tryParse(params['temp_trigger_value']?.toString() ?? '') ?? 41;
+
     switch (sensor) {
       case gasSensor:
-        if (data! > 20) {
-          notificationTitle = '⚠️ High Ammonia Level!';
+        if (data! > ppmMax) {
+          notificationTitle = '⚠️ Ammonia Too High';
           notificationBody =
-              'Ammonia level is very high (${data!.toStringAsFixed(1)} ppm).';
+              'Current PPM is ${data!.toStringAsFixed(1)}, exceeding $ppmMax.';
+          shouldNotify = true;
+        } else if (data! < ppmMin) {
+          notificationTitle = '⚠️ Ammonia Too Low';
+          notificationBody =
+              'Current PPM is ${data!.toStringAsFixed(1)}, below $ppmMin.';
           shouldNotify = true;
         }
         break;
 
       case heatIndexSensor:
-        if (data! >= 65) {
-          notificationTitle = '🚨 Heat Emergency!';
+        if (data! >= hiLimit) {
+          notificationTitle = '🔥 Heat Index Alert';
           notificationBody =
-              'Heat index is dangerously high (${data!.toStringAsFixed(1)}°C).';
-          shouldNotify = true;
-        } else if (data! >= 48 && !(notificationState[sensorKey] ?? false)) {
-          notificationTitle = '⚠️ Heat Warning!';
-          notificationBody =
-              'Heat index is high (${data!.toStringAsFixed(1)}°C).';
-          shouldNotify = true;
-        }
-        break;
-
-      case drumwaterSensor:
-        if (data == 0) {
-          notificationTitle = '🚰 Drum Water Empty';
-          notificationBody = 'Drum water level is low. Please refill the drum.';
-          shouldNotify = true;
-        }
-        break;
-
-      case drinkerwaterSensor:
-        final drumLevel = ref.watch(deviceStreamProvider).maybeWhen(
-            data: (device) => device.drumwaterLevel, orElse: () => null);
-
-        if (data == 0) {
-          if (drumLevel == 1) {
-            notificationTitle = '💧 Drink Water Auto Refill';
-            notificationBody =
-                'Drink water level is low. Activating automatic refill from drum.';
-          } else {
-            notificationTitle = '❗ Refill Drum First';
-            notificationBody =
-                'Drink water is low, but drum is also empty. Please refill drum before auto refill.';
-          }
+              'Heat index is ${data!.toStringAsFixed(1)}°C, exceeds $hiLimit°C.';
           shouldNotify = true;
         }
         break;
 
       case tempSensor:
-        if (data! > 40) {
-          notificationTitle = '🌡️ High Temperature!';
+        if (data! > tempLimit) {
+          notificationTitle = '🌡️ Temperature Alert';
           notificationBody =
-              'Temperature is very high (${data!.toStringAsFixed(1)}°C).';
+              'Temperature is ${data!.toStringAsFixed(1)}°C, exceeds $tempLimit°C.';
           shouldNotify = true;
         }
         break;
 
-      case humidSensor:
-        if (data! > 60) {
-          notificationTitle = '💧 High Humidity!';
-          notificationBody =
-              'Humidity is very high (${data!.toStringAsFixed(1)}%).';
-          shouldNotify = true;
-        }
+      default:
         break;
     }
 
-    // Only notify if we haven't already notified for this state
     if (shouldNotify && !(notificationState[sensorKey] ?? false)) {
       NotificationService.scheduleLocalNotification(
         title: notificationTitle,
@@ -503,7 +481,6 @@ class _DataField extends StatelessWidget {
         sensorKey: true,
       };
     } else if (!shouldNotify && notificationState[sensorKey] == true) {
-      // Reset notification state when values return to normal
       ref.read(notificationStateProvider.notifier).state = {
         ...notificationState,
         sensorKey: false,
@@ -519,7 +496,7 @@ class _DataField extends StatelessWidget {
     return Consumer(
       builder: (context, ref, child) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _checkAndTriggerNotification(context, ref);
+          _checkAndTriggerNotification(context, ref, {});
         });
 
         final isWaterSensor =
