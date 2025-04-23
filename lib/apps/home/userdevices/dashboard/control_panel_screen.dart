@@ -148,6 +148,29 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               error: (e, _) => Text("Error loading parameters: $e"),
             ),
 
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text("Reset to Default"),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () async {
+                final confirmed = await _confirmAction(
+                  context,
+                  "Reset Parameters",
+                  "Are you sure you want to reset all parameters to default values?",
+                );
+                if (confirmed) {
+                  await DeviceFirebase()
+                      .resetParametersToDefault(widget.deviceId);
+                  ref.invalidate(parameterStreamProvider(widget.deviceId));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text("Parameters reset to default")),
+                  );
+                }
+              },
+            ),
+
             const SizedBox(height: 30),
             ElevatedButton.icon(
               icon: const Icon(Icons.restart_alt),

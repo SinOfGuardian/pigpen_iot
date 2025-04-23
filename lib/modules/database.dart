@@ -104,6 +104,19 @@ class DeviceFirebase {
         .ref('/realtime/devices/$deviceId/parameters/$key')
         .set(value);
   }
+
+  Future<void> resetParametersToDefault(String deviceId) async {
+    const defaultParams = {
+      'heatindex_trigger_value': 66,
+      'ppm_trigger_min_value': 21,
+      'ppm_trigger_max_value': 26,
+      'temp_trigger_value': 41,
+    };
+
+    await _database
+        .ref('/realtime/devices/$deviceId/parameters')
+        .set(defaultParams);
+  }
 }
 
 class ScheduleOperations with InternetConnection {
