@@ -82,7 +82,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               },
             ),
 
-            const Divider(),
+            const Divider(height: 10),
 
             // 🔧 Manual durations
             Text("Sprinkler Duration (manual)",
@@ -113,7 +113,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               },
             ),
 
-            const Divider(height: 40),
+            const Divider(height: 10),
 
             // ⚙️ Trigger Parameters
             Row(
@@ -148,7 +148,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               error: (e, _) => Text("Error loading parameters: $e"),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             ElevatedButton.icon(
               icon: const Icon(Icons.refresh),
               label: const Text("Reset to Default"),
@@ -171,7 +171,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
               },
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
             ElevatedButton.icon(
               icon: const Icon(Icons.restart_alt),
               label: const Text("Restart ESP32"),
