@@ -113,41 +113,66 @@ class _GraphsSectionState extends ConsumerState<_GraphsSection>
   }
 }
 
+Widget _timeRangeSelector(BuildContext context, WidgetRef ref) {
+  final selected = ref.watch(timeRangeProvider);
+  return SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: TimeRange.values.map((range) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ChoiceChip(
+            label: Text(range.name),
+            selected: selected == range,
+            onSelected: (_) =>
+                ref.read(timeRangeProvider.notifier).state = range,
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
 class _GraphSectionView extends StlsView<_GraphsSectionState> {
   _GraphSectionView(super.state) : super(key: ObjectKey(state));
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // Row for temperature and humidity
-            Row(
-              children: [
-                Expanded(
-                    child: SizedBox(
-                        height: 150,
-                        child: _SingleGraph(
-                            provider: graphDataProvider(tempSensor)))),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: SizedBox(
-                        height: 150,
-                        child: _SingleGraph(
-                            provider: graphDataProvider(humidSensor)))),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _SingleGraph(provider: graphDataProvider(heatIndexSensor)),
-            const SizedBox(height: 20),
-            // _SingleGraph(provider: graphDataProvider(humidSensor)),
-            // const SizedBox(height: 20),
-            _SingleGraph(provider: graphDataProvider(gasSensor)),
-            // const SizedBox(height: 20),
-            // _SingleGraph(provider: graphDataProvider(drinklerwaterSensor)),
-          ],
+      child: Consumer(
+        builder: (context, ref, child) => SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _timeRangeSelector(context, ref),
+              const SizedBox(height: 10),
+
+              // Row for temperature and humidity
+              Row(
+                children: [
+                  Expanded(
+                      child: SizedBox(
+                          height: 150,
+                          child: _SingleGraph(
+                              provider: graphDataProvider(tempSensor)))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: SizedBox(
+                          height: 150,
+                          child: _SingleGraph(
+                              provider: graphDataProvider(humidSensor)))),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _SingleGraph(provider: graphDataProvider(heatIndexSensor)),
+              const SizedBox(height: 20),
+              // _SingleGraph(provider: graphDataProvider(humidSensor)),
+              // const SizedBox(height: 20),
+              _SingleGraph(provider: graphDataProvider(gasSensor)),
+              // const SizedBox(height: 20),
+              // _SingleGraph(provider: graphDataProvider(drinklerwaterSensor)),
+            ],
+          ),
         ),
       ),
     );

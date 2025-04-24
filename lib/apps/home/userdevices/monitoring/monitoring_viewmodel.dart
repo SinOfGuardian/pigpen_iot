@@ -1,3 +1,6 @@
+// Updated monitoring_viewmodel.dart with full logic
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pigpen_iot/apps/home/devices/device_list.dart';
@@ -26,8 +29,8 @@ class GraphNotifier extends StateNotifier<GraphData> {
           minY: sensor.min,
           maxY: sensor.max,
           arrayOfData: const [],
-          lowest: sensor == gasSensor ? 0.0 : 0, // Handle both types
-          highest: sensor == gasSensor ? 0.0 : 0, // Handle both types
+          lowest: sensor == gasSensor ? 0.0 : 0,
+          highest: sensor == gasSensor ? 0.0 : 0,
         ));
 
   final _stackOfData = GenericStack<num>();
@@ -98,7 +101,6 @@ class GraphNotifier extends StateNotifier<GraphData> {
   }
 }
 
-// In your viewmodel, consider adding this to prevent unnecessary rebuilds
 @override
 bool updateShouldNotify(GraphData old, GraphData newData) {
   return !listEquals(old.arrayOfData, newData.arrayOfData) ||
@@ -106,3 +108,43 @@ bool updateShouldNotify(GraphData old, GraphData newData) {
       old.highest != newData.highest ||
       old.lowest != newData.lowest;
 }
+
+// Filter Enums and Providers for Historical Graph Support
+enum TimeRange { live, daily, weekly, monthly, yearly }
+
+final timeRangeProvider = StateProvider<TimeRange>((ref) => TimeRange.live);
+
+final historicalLogProvider =
+    FutureProvider.family<List<DeviceData>, TimeRange>((ref, range) async {
+  final deviceId = ref.watch(activeDeviceProvider)!.deviceId;
+  final firestore = FirebaseFirestore.instance;
+  final now = DateTime.now();
+  late DateTime start;
+
+  switch (range) {
+    case TimeRange.daily:
+      start = now.subtract(Duration(hours: 24));
+      break;
+    case TimeRange.weekly:
+      start = now.subtract(Duration(days: 7));
+      break;
+    case TimeRange.monthly:
+      start = DateTime(now.year, now.month - 1, now.day);
+      break;
+    case TimeRange.yearly:
+      start = DateTime(now.year - 1, now.month, now.day);
+      break;
+    default:
+      return [];
+  }
+
+  final snapshot = await firestore
+      .collection('logs')
+      .doc(deviceId)
+      .collection('records')
+      .where('timestamp', isGreaterThan: start.millisecondsSinceEpoch)
+      .orderBy('timestamp')
+      .get();
+
+  return snapshot.docs.map((doc) => DeviceData.fromJson(doc.data())).toList();
+});
