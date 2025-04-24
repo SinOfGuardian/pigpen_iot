@@ -24,7 +24,7 @@ class SnapshotViewerScreen extends StatelessWidget {
       await Share.shareXFiles([XFile(file.path)],
           text: 'Check out this snapshot!');
     } catch (e) {
-      print("❌ Error sharing image: $e");
+      debugPrint("❌ Error sharing image: $e");
     }
   }
 
@@ -51,7 +51,7 @@ class SnapshotViewerScreen extends StatelessWidget {
         await FirebaseStorage.instance.ref(storagePath).delete();
         Navigator.pop(context); // Go back to gallery after delete
       } catch (e) {
-        print("❌ Error deleting image: $e");
+        debugPrint("❌ Error deleting image: $e");
       }
     }
   }

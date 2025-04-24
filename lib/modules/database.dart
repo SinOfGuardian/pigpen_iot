@@ -91,7 +91,7 @@ class DeviceFirebase {
         .map((event) {
       final data = event.snapshot.value;
       if (data == null || data is! Map) return <String, dynamic>{};
-      return Map<String, dynamic>.from(data as Map);
+      return Map<String, dynamic>.from(data);
     });
   }
 

@@ -1,7 +1,10 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'dart:io';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
@@ -78,7 +81,7 @@ class VideoConversionService {
       String extension = '';
       final mp4Path = "${workingDir.path}/output.mp4";
       final mp4Command =
-          "-y -framerate 1 -i '${workingDir.path}/frame_%04d.jpg' -c:v mpeg4 '$mp4Path'";
+          "-y -framerate 3 -i '${workingDir.path}/frame_%04d.jpg' -c:v mpeg4 '$mp4Path'";
 
       // final aviPath = "${workingDir.path}/output.avi";
       // final aviCommand =
@@ -94,7 +97,7 @@ class VideoConversionService {
         // ⚠️ Fallback to .mp4
         final mp4Path = "${workingDir.path}/output.mp4";
         final mp4Command =
-            "-y -framerate 1 -i '${workingDir.path}/frame_%04d.jpg' -c:v mpeg4 '$mp4Path'";
+            "-y -framerate 3 -i '${workingDir.path}/frame_%04d.jpg' -c:v mpeg4 '$mp4Path'";
         onLog("⚠️ AVI failed. Trying MP4...");
         session = await FFmpegKit.execute(mp4Command);
         returnCode = await session.getReturnCode();
@@ -107,7 +110,7 @@ class VideoConversionService {
         }
       }
 
-      if (finalVideo == null || !finalVideo.existsSync()) {
+      if (!finalVideo.existsSync()) {
         throw Exception("Conversion file not created.");
       }
 
@@ -132,7 +135,7 @@ class VideoConversionService {
       return downloadUrl;
     } catch (e) {
       onLog("❌ $e");
-      print("❌ Error: $e");
+      debugPrint("❌ Error: $e");
       return null;
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,7 @@ class SnapshotService {
     String? deviceId,
   }) async {
     try {
-      print("📸 Snapshot request to: $snapshotUrl");
+      debugPrint("📸 Snapshot request to: $snapshotUrl");
       final response = await http.get(Uri.parse(snapshotUrl));
 
       if (response.statusCode != 200) {
@@ -34,10 +35,10 @@ class SnapshotService {
       final ref = FirebaseStorage.instance.ref().child(storagePath);
       await ref.putFile(file);
 
-      print("✅ Snapshot uploaded to Firebase: $storagePath");
+      debugPrint("✅ Snapshot uploaded to Firebase: $storagePath");
     } catch (e, stack) {
-      print("❌ Snapshot error: $e");
-      print(stack);
+      debugPrint("❌ Snapshot error: $e");
+      debugPrint(stack as String?);
       rethrow;
     }
   }

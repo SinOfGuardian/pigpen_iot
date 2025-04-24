@@ -18,7 +18,6 @@ import 'package:pigpen_iot/custom/app_text.dart';
 import 'package:pigpen_iot/modules/database.dart';
 import 'package:pigpen_iot/modules/responsive.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
-import 'package:pigpen_iot/provider/device_parameters_provider.dart';
 import 'package:pigpen_iot/provider/device_setting_provider.dart';
 import 'package:pigpen_iot/services/notification_service.dart';
 
@@ -83,12 +82,10 @@ class BottomSection extends ConsumerWidget {
 
   Widget _deviceName(BuildContext context, String? deviceName, String deviceId,
       WidgetRef ref) {
-    // final isFavorited = ref.watch(favoriteProvider);
-    //final notifier = ref.read(favoriteProvider.notifier);
-
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 👈 Left side: Device Name
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,8 +97,34 @@ class BottomSection extends ConsumerWidget {
             ],
           ),
         ),
-        GestureDetector(
-          onTap: () {
+        // 🔄 Refresh button
+        ElevatedButton.icon(
+          icon: const Icon(Icons.refresh, size: 18),
+          label: const Text("Refresh", style: TextStyle(fontSize: 14)),
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          onPressed: () {
+            ref.invalidate(localDrinkerDurationProvider);
+            ref.invalidate(localSprinklerDurationProvider);
+            ref.invalidate(schedulesProvider(deviceId));
+            ref.invalidate(deviceStreamProvider);
+            ref.invalidate(notificationStateProvider);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Dashboard refreshed")),
+            );
+          },
+        ),
+
+        // 👉 Right side: Settings icon
+        IconButton(
+          icon: Icon(
+            Ionicons.settings_outline,
+            size: 28,
+            color: Colors.black,
+          ),
+          onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -109,11 +132,6 @@ class BottomSection extends ConsumerWidget {
               ),
             );
           },
-          child: Icon(
-            Ionicons.settings_outline,
-            size: 30,
-            color: Colors.black.withOpacity(1),
-          ),
         ),
       ],
     );
@@ -136,10 +154,6 @@ class BottomSection extends ConsumerWidget {
     final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
 
     final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
-    final sprinklerDurationAsync =
-        ref.watch(sprinklerDurationStreamProvider(deviceId));
-    final drinkerDurationAsync =
-        ref.watch(drinkerDurationStreamProvider(deviceId));
 
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
@@ -186,11 +200,9 @@ class BottomSection extends ConsumerWidget {
             // 🔘 Manual Controls
             Row(
               children: [
-                sprinklerDurationAsync.when(
-                  data: (duration) => Text("Sprinkler Manual (${duration}s)",
-                      style: Theme.of(context).textTheme.bodyMedium),
-                  loading: () => const Text("Sprinkler Manual (...)"),
-                  error: (_, __) => const Text("Sprinkler Manual"),
+                Text(
+                  "Sprinkler Manual (${localSprinklerDuration}s)",
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
@@ -230,11 +242,9 @@ class BottomSection extends ConsumerWidget {
             //  const SizedBox(height: 5),
             Row(
               children: [
-                drinkerDurationAsync.when(
-                  data: (duration) => Text("Drinker Manual (${duration}s)",
-                      style: Theme.of(context).textTheme.bodyMedium),
-                  loading: () => const Text("Drinker Manual (...)"),
-                  error: (_, __) => const Text("Drinker Manual"),
+                Text(
+                  "Drinker Manual (${localDrinkerDuration}s)",
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const Spacer(),
                 Consumer(builder: (context, ref, _) {
@@ -298,17 +308,22 @@ class BottomSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userDevice = ref.watch(activeDeviceProvider);
+    // final deviceId = userDevice?.deviceId ?? '';
+
     return ShaddowedContainer(
       child: Padding(
         padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _deviceName(context, userDevice?.deviceName,
-                userDevice?.deviceId ?? '?', ref),
-            Expanded(
-              child: _dataSection(context, ref),
+            const SizedBox(height: 10),
+            _deviceName(
+              context,
+              userDevice?.deviceName,
+              userDevice?.deviceId ?? '?',
+              ref,
             ),
+            Expanded(child: _dataSection(context, ref)),
           ],
         ),
       ),

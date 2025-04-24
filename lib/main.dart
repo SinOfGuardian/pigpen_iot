@@ -33,7 +33,7 @@ Future<void> main() async {
         kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
   );
 
-  print("✅ Firebase App Check activated in debug mode");
+  debugPrint("✅ Firebase App Check activated in debug mode");
   await Future.delayed(const Duration(milliseconds: 300));
   runApp(const ProviderScope(child: MyApp()));
 }

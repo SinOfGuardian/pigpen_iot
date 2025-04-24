@@ -1,7 +1,10 @@
+// ignore_for_file: unused_element
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
@@ -55,7 +58,7 @@ class VideoThumbnailService {
 
       return generatedPath;
     } catch (e) {
-      print("⚠️ Thumbnail generation failed: $e");
+      debugPrint("⚠️ Thumbnail generation failed: $e");
       return null;
     }
   }

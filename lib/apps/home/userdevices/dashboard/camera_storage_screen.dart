@@ -82,7 +82,7 @@ class _CameraStorageScreenState extends State<CameraStorageScreen> {
 
       return generatedPath;
     } catch (e) {
-      print("⚠️ Thumbnail generation failed: $e");
+      debugPrint("⚠️ Thumbnail generation failed: $e");
       return null;
     }
   }
