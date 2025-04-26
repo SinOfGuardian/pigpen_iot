@@ -2,7 +2,7 @@ import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pigpen_iot/apps/home/userdevices/dashboard/dashboard_screen.dart';
-import 'package:pigpen_iot/apps/home/userdevices/logs/log_screen.dart';
+import 'package:pigpen_iot/apps/home/userdevices/logs/log_history_screen.dart';
 
 import 'package:pigpen_iot/apps/home/userdevices/monitoring/monitoring_screen.dart';
 import 'package:pigpen_iot/apps/home/userdevices/schedules/schedule_view.dart';
@@ -24,7 +24,7 @@ class _UserDevicePageViewState extends ConsumerState<UserDevicePageView> {
     const DashboardScreen(),
     const MonitoringScreen(),
     const SchedulerPage(),
-    const MonitoringLogsScreen(
+    const LogsHistoryScreen(
       deviceId: 'deviceId',
     ),
     // FinalPage(),

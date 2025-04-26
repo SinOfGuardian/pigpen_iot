@@ -35,6 +35,7 @@ dependencies:
   riverpod_annotation: ^2.2.0
 
   # SERVICES
+  connectivity_plus: ^6.1.4
   internet_connection_checker: ^3.0.1
   flutter_local_notifications: ^19.0.0
   flutter_timezone: ^4.1.0
@@ -75,6 +76,7 @@ dependencies:
   permission_handler: ^11.4.0
   fl_chart: ^0.70.2
   share_plus: ^10.1.4
+  analyzer: ^6.0.0
 
   #ESP32 Camera
   # flutter_mjpeg: ^2.0.4
