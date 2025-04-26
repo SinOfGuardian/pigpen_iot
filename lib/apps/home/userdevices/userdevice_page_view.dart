@@ -25,7 +25,7 @@ class _UserDevicePageViewState extends ConsumerState<UserDevicePageView> {
     const DashboardScreen(),
     const MonitoringScreen(),
     const SchedulerPage(),
-    LogsHistoryScreen(),
+    const LogsHistoryScreen(),
     // FinalPage(),
   ];
 

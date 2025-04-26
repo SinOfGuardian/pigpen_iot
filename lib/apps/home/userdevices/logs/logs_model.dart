@@ -45,3 +45,56 @@ const deletedLog = Log(
   colorDark: Color.fromARGB(255, 37, 26, 26),
   icon: EvaIcons.trash2Outline,
 );
+
+// logs_model.dart
+
+class LogEntry {
+  final String time;
+  final double temp;
+  final double humid;
+  final double heat;
+  final int gas;
+
+  LogEntry({
+    required this.time,
+    required this.temp,
+    required this.humid,
+    required this.heat,
+    required this.gas,
+  });
+
+  factory LogEntry.fromRawString(String raw) {
+    final parts = raw.split('|').map((e) => e.trim()).toList();
+    final time = parts[0];
+    final temp = double.parse(parts[1].split(' ')[1].replaceAll('°C', ''));
+    final humid = double.parse(parts[2].split(' ')[1].replaceAll('%', ''));
+    final heat = double.parse(parts[3].split(' ')[1].replaceAll('°C', ''));
+    final gas = int.parse(parts[4].split(' ')[1]);
+
+    return LogEntry(
+      time: time,
+      temp: temp,
+      humid: humid,
+      heat: heat,
+      gas: gas,
+    );
+  }
+}
+
+class LogQueryParams {
+  final String deviceId;
+  final int year;
+  final int month;
+  final int day;
+  final int hour;
+  final int minute;
+
+  const LogQueryParams({
+    required this.deviceId,
+    required this.year,
+    required this.month,
+    required this.day,
+    required this.hour,
+    required this.minute,
+  });
+}
