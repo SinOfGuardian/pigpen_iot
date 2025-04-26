@@ -14,62 +14,47 @@ class LogsHistoryScreen extends ConsumerStatefulWidget {
 
 class _LogsHistoryScreenState extends ConsumerState<LogsHistoryScreen> {
   String deviceId = 'pigpeniot-38eba81f8a3c';
-  DateTime selectedDateTime = DateTime.now();
+  DateTime selectedDate = DateTime.now();
 
   Future<void> _refreshLogs() async {
-    ref.invalidate(logsStreamProvider(_currentParams));
+    ref.invalidate(dailyLogsProvider(_currentParams));
   }
 
   LogQueryParams get _currentParams => LogQueryParams(
         deviceId: deviceId,
-        year: selectedDateTime.year,
-        month: selectedDateTime.month,
-        day: selectedDateTime.day,
-        hour: selectedDateTime.hour,
-        minute: selectedDateTime.minute,
+        year: selectedDate.year,
+        month: selectedDate.month,
+        day: selectedDate.day,
       );
 
-  Future<void> _pickDateTime() async {
-    final pickedDate = await showDatePicker(
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
       context: context,
-      initialDate: selectedDateTime,
+      initialDate: selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
 
-    if (pickedDate != null) {
-      final pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(selectedDateTime),
-      );
-
-      if (pickedTime != null) {
-        setState(() {
-          selectedDateTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-        });
-        _refreshLogs();
-      }
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
+      });
+      _refreshLogs();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final logsAsync = ref.watch(logsStreamProvider(_currentParams));
+    final logsAsync = ref.watch(dailyLogsProvider(_currentParams));
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: ElevatedButton.icon(
-            onPressed: _pickDateTime,
+            onPressed: _pickDate,
             icon: const Icon(Icons.date_range),
-            label: const Text('Pick Date & Time'),
+            label: const Text('Pick Date'),
           ),
         ),
         Expanded(
@@ -86,7 +71,7 @@ class _LogsHistoryScreenState extends ConsumerState<LogsHistoryScreen> {
                         final log = logs[index];
                         return Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
+                              horizontal: 8.0, vertical: 6.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
