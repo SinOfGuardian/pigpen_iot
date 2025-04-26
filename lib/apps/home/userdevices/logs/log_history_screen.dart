@@ -1,98 +1,33 @@
-// logs_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'logs_provider.dart';
-import 'logs_model.dart';
+import 'package:pigpen_iot/apps/home/userdevices/logs/logs_provider.dart';
+import 'package:pigpen_iot/custom/log_item_tile.dart';
 
-class LogsHistoryScreen extends ConsumerStatefulWidget {
-  const LogsHistoryScreen({Key? key}) : super(key: key);
-
-  @override
-  ConsumerState<LogsHistoryScreen> createState() => _LogsHistoryScreenState();
-}
-
-class _LogsHistoryScreenState extends ConsumerState<LogsHistoryScreen> {
-  String deviceId = 'pigpeniot-38eba81f8a3c';
-  DateTime selectedDate = DateTime.now();
-
-  Future<void> _refreshLogs() async {
-    ref.invalidate(dailyLogsProvider(_currentParams));
-  }
-
-  LogQueryParams get _currentParams => LogQueryParams(
-        deviceId: deviceId,
-        year: selectedDate.year,
-        month: selectedDate.month,
-        day: selectedDate.day,
-      );
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-      _refreshLogs();
-    }
-  }
+class LogHistoryScreen extends ConsumerWidget {
+  const LogHistoryScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final logsAsync = ref.watch(dailyLogsProvider(_currentParams));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final logsAsync = ref.watch(logListProvider);
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton.icon(
-            onPressed: _pickDate,
-            icon: const Icon(Icons.date_range),
-            label: const Text('Pick Date'),
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _refreshLogs,
-            child: logsAsync.when(
-              data: (logs) => logs.isEmpty
-                  ? const Center(child: Text('No logs found.'))
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: logs.length,
-                      separatorBuilder: (_, __) => const Divider(height: 1),
-                      itemBuilder: (context, index) {
-                        final log = logs[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 6.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(log.time,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              Text('Temp: ${log.temp.toStringAsFixed(1)}°C'),
-                              Text('Humid: ${log.humid.toStringAsFixed(1)}%'),
-                              Text('Heat: ${log.heat.toStringAsFixed(1)}°C'),
-                              Text('Gas: ${log.gas}'),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, stack) => Center(child: Text('Error: $e')),
-            ),
-          ),
-        ),
-      ],
+    return Scaffold(
+      body: logsAsync.when(
+        data: (logs) {
+          if (logs.isEmpty) {
+            return const Center(child: Text('No logs found.'));
+          }
+
+          return ListView.builder(
+            itemCount: logs.length,
+            itemBuilder: (context, index) {
+              final log = logs[index];
+              return LogItemTile(log: log);
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+      ),
     );
   }
 }

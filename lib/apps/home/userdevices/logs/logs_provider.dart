@@ -1,63 +1,40 @@
-// logs_provider.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'logs_model.dart';
 
-final dailyLogsProvider = FutureProvider.family
-    .autoDispose<List<LogEntry>, LogQueryParams>((ref, params) async {
-  final dbRef = FirebaseDatabase.instance.ref(
-    'realtime/logs/${params.deviceId}'
-    '/year_${params.year}'
-    '/month_${params.month.toString().padLeft(2, '0')}'
-    '/day_${params.day.toString().padLeft(2, '0')}',
-  );
+import 'package:pigpen_iot/apps/home/userdevices/logs/logs_model.dart';
+import 'package:pigpen_iot/services/firebase_storage_service.dart';
 
-  try {
-    final snapshot = await dbRef.get().timeout(const Duration(seconds: 10));
+// Provide FirebaseStorageService
+final firebaseStorageServiceProvider =
+    Provider((ref) => FirebaseStorageService());
 
-    if (!snapshot.exists || snapshot.value == null) return <LogEntry>[];
+// Provide the list of logs
+final logListProvider = FutureProvider<List<LogModel>>((ref) async {
+  final service = ref.read(firebaseStorageServiceProvider);
 
-    final Map<dynamic, dynamic> dayData =
-        snapshot.value as Map<dynamic, dynamic>;
+  final deviceId =
+      "pigpeniot-38eba81f8a3c"; // <-- Update this if you want it dynamic
 
-    final List<LogEntry> allLogs = [];
+  // Get all the logs (deep scan)
+  final refs = await service.listAllLogs(deviceId);
+  List<LogModel> logs = [];
 
-    for (final hourEntry in dayData.entries) {
-      final hourKey = hourEntry.key as String;
-      final hourValue = hourEntry.value;
+  for (final refItem in refs) {
+    // Only JSON files
+    if (refItem.name.endsWith('.json')) {
+      final data = await service.downloadLog(refItem);
+      final metadata = await refItem.getMetadata();
+      final updatedAt = metadata.updated ?? DateTime.now();
 
-      // Example: "hour_01" to 1 ➔ minus 1 ➔ becomes 0
-      int hour = int.tryParse(hourKey.replaceFirst('hour_', '')) ?? 0;
-      hour = (hour - 1).clamp(0, 23);
-
-      if (hourValue is Map<dynamic, dynamic>) {
-        for (final minuteEntry in hourValue.entries) {
-          final minuteValue = minuteEntry.value;
-
-          if (minuteValue is Map<dynamic, dynamic>) {
-            for (final logEntry in minuteValue.entries) {
-              final logString = logEntry.value;
-
-              if (logString is String && logString.trim().isNotEmpty) {
-                try {
-                  final entry = LogEntry.fromRawString(logString);
-                  allLogs.add(entry);
-                } catch (e) {
-                  print('Failed to parse log: $e');
-                  continue; // Skip bad formatted log
-                }
-              }
-            }
-          }
-        }
-      }
+      logs.add(LogModel(
+        fileName: refItem.name,
+        date: updatedAt,
+        data: data,
+      ));
     }
-
-    allLogs.sort((a, b) => a.time.compareTo(b.time)); // sort ascending by time
-    return allLogs;
-  } catch (e) {
-    print('Error fetching daily logs: $e');
-    return <LogEntry>[];
   }
+
+  // Sort by newest first
+  logs.sort((a, b) => b.date.compareTo(a.date));
+
+  return logs;
 });

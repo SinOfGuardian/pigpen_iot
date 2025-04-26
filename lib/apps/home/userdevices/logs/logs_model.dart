@@ -48,51 +48,14 @@ const deletedLog = Log(
 
 // logs_model.dart
 
-class LogEntry {
-  final String time;
-  final double temp;
-  final double humid;
-  final double heat;
-  final int gas;
+class LogModel {
+  final String fileName;
+  final DateTime date;
+  final Map<String, dynamic> data;
 
-  LogEntry({
-    required this.time,
-    required this.temp,
-    required this.humid,
-    required this.heat,
-    required this.gas,
-  });
-
-  factory LogEntry.fromRawString(String raw) {
-    final parts = raw.split('|').map((e) => e.trim()).toList();
-    if (parts.length < 5) throw FormatException('Log format invalid');
-
-    final time = parts[0];
-    final temp = double.parse(parts[1].split(' ')[1].replaceAll('°C', ''));
-    final humid = double.parse(parts[2].split(' ')[1].replaceAll('%', ''));
-    final heat = double.parse(parts[3].split(' ')[1].replaceAll('°C', ''));
-    final gas = int.parse(parts[4].split(' ')[1]);
-
-    return LogEntry(
-      time: time,
-      temp: temp,
-      humid: humid,
-      heat: heat,
-      gas: gas,
-    );
-  }
-}
-
-class LogQueryParams {
-  final String deviceId;
-  final int year;
-  final int month;
-  final int day;
-
-  const LogQueryParams({
-    required this.deviceId,
-    required this.year,
-    required this.month,
-    required this.day,
+  LogModel({
+    required this.fileName,
+    required this.date,
+    required this.data,
   });
 }
