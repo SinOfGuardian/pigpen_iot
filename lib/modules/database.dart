@@ -20,12 +20,12 @@ class DeviceFirebase {
         DeviceData.fromJson(event.snapshot.value as Map<Object?, Object?>?));
   }
 
-  /// ✅ Set mode ("demo" or "production")
+  /// Set mode ("demo" or "production")
   Future<void> setMode(String deviceId, String mode) async {
     await _database.ref('$_path/$deviceId/variables').update({'mode': mode});
   }
 
-  /// ✅ Get mode as a stream
+  /// Get mode as a stream
   Stream<String> getModeStream(String deviceId) {
     return _database
         .ref('$_path/$deviceId/variables/mode')
@@ -33,14 +33,14 @@ class DeviceFirebase {
         .map((event) => event.snapshot.value?.toString() ?? 'production');
   }
 
-  /// ✅ Restart ESP32
+  /// Restart ESP32
   Future<void> restartESP32(String deviceId) async {
     await _database
         .ref('$_path/$deviceId/variables')
         .update({'esp_command': 'esp_restart'});
   }
 
-  /// ✅ Set manual ON duration (drinker/sprinkler)
+  /// Set manual ON duration (drinker/sprinkler)
   Future<void> setManualDuration({
     required String deviceId,
     required String type, // "drinker" or "sprinkler"
@@ -51,7 +51,7 @@ class DeviceFirebase {
         .set(duration);
   }
 
-  /// ✅ Get current duration as stream
+  /// Get current duration as stream
   Stream<int> manualDurationStream(String deviceId, String type) {
     return _database
         .ref('$_path/$deviceId/variables/manual_${type}_duration')
@@ -60,7 +60,7 @@ class DeviceFirebase {
             int.tryParse(event.snapshot.value?.toString() ?? '0') ?? 0);
   }
 
-  /// ✅ Get ESP command stream (optional)
+  /// Get ESP command stream (optional)
   Stream<String> espCommandStream(String deviceId) {
     return _database
         .ref('$_path/$deviceId/variables/esp_command')
@@ -68,12 +68,12 @@ class DeviceFirebase {
         .map((event) => event.snapshot.value?.toString() ?? '.');
   }
 
-  /// ✅ Update Device Name
+  /// Update Device Name
   Future<void> updateDeviceName(String deviceId, String newName) async {
     await _database.ref('devices/$deviceId').update({'deviceName': newName});
   }
 
-  /// ✅ Manual status stream (already existed)
+  /// Manual status stream (already existed)
   Stream<int> manualStatusStream({
     required String deviceId,
     required String type,
@@ -107,10 +107,10 @@ class DeviceFirebase {
 
   Future<void> resetParametersToDefault(String deviceId) async {
     const defaultParams = {
-      'heatindex_trigger_value': 66,
-      'ppm_trigger_min_value': 21,
-      'ppm_trigger_max_value': 26,
-      'temp_trigger_value': 41,
+      'heatindex_trigger_value': 65,
+      'ppm_trigger_min_value': 15,
+      'ppm_trigger_max_value': 20,
+      'temp_trigger_value': 42,
     };
 
     await _database

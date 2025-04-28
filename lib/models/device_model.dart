@@ -7,12 +7,14 @@ class Device {
   final String model;
   final String dateRegistered;
   final String status;
+  final String cameraIp;
 
   const Device({
     required this.id,
     required this.model,
     required this.dateRegistered,
     required this.status,
+    required this.cameraIp,
   });
 
   factory Device.fromJson(Map<Object?, Object?> json) {
@@ -21,6 +23,7 @@ class Device {
       model: json['model'] as String,
       dateRegistered: json['date_registered'] as String,
       status: json['status'] as String,
+      cameraIp: json['camera_ip'] as String,
     );
   }
 
@@ -30,6 +33,7 @@ class Device {
       'model': model,
       'date_registered': dateRegistered,
       'status': status,
+      'camera_ip': cameraIp,
     };
   }
 
@@ -39,11 +43,13 @@ class Device {
       'model': model,
       'date_registered': dateRegistered,
       'status': status,
+      'camera_ip': cameraIp,
     };
   }
 
   factory Device.empty() {
-    return const Device(id: '', model: '', dateRegistered: '', status: '');
+    return const Device(
+        id: '', model: '', dateRegistered: '', status: '', cameraIp: '');
   }
 
   Device copyWith({
@@ -51,17 +57,19 @@ class Device {
     String? model,
     String? dateRegistered,
     String? status,
+    String? cameraIp,
   }) {
     return Device(
       id: id ?? this.id,
       model: model ?? this.model,
       dateRegistered: dateRegistered ?? this.dateRegistered,
       status: status ?? this.status,
+      cameraIp: cameraIp ?? this.cameraIp,
     );
   }
 
   @override
   String toString() {
-    return 'Device(id: $id, model: $model, dateRegistered: $dateRegistered, status: $status)';
+    return 'Device(id: $id, model: $model, dateRegistered: $dateRegistered, status: $status, cameraIp: $cameraIp)';
   }
 }

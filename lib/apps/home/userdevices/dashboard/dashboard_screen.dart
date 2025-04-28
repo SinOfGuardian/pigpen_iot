@@ -58,6 +58,14 @@ class UpperSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final deviceId = ref
+        .watch(activeDeviceProvider.select((device) => device?.deviceId ?? ''));
+
+    if (deviceId.isEmpty) {
+      return const Center(
+        child: Text('No device selected'),
+      );
+    }
     return SafeArea(
       bottom: false,
       child: Padding(
@@ -65,10 +73,7 @@ class UpperSection extends ConsumerWidget {
         child: Column(
           children: [
             Expanded(
-              child: CameraStreamWidget(
-                streamUrl: 'http://192.168.100.210/stream',
-                snapshotUrl: 'http://192.168.100.210/jpg',
-              ),
+              child: CameraStreamWidget(deviceId: deviceId),
             ),
           ],
         ),

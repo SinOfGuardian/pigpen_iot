@@ -11,6 +11,7 @@ class LogItemTile extends StatelessWidget {
     return ListTile(
       title: Text(log.fileName),
       subtitle: Text('${log.date.toLocal()}'),
+      trailing: const Icon(Icons.chevron_right),
       onTap: () {
         showDialog(
           context: context,
