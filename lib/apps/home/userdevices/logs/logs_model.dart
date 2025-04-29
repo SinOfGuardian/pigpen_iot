@@ -47,15 +47,18 @@ const deletedLog = Log(
 );
 
 // logs_model.dart
+class LogEntry {
+  final String time; // "06:13"
+  final double temperature;
+  final double humidity;
+  final double heatIndex;
+  final double gasDetection;
 
-class LogModel {
-  final String fileName;
-  final DateTime date;
-  final Map<String, dynamic> data;
-
-  LogModel({
-    required this.fileName,
-    required this.date,
-    required this.data,
+  LogEntry({
+    required this.time,
+    required this.temperature,
+    required this.humidity,
+    required this.heatIndex,
+    required this.gasDetection,
   });
 }

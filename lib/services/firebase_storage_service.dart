@@ -1,30 +1,50 @@
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
 
 class FirebaseStorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final Duration refreshInterval;
 
-  /// Deep recursive list of all log files under deviceId
-  Future<List<Reference>> listAllLogs(String deviceId) async {
+  FirebaseStorageService({this.refreshInterval = const Duration(seconds: 30)});
+
+  /// Stream log file references under `logs/deviceId`
+  Stream<List<Reference>> streamAllLogs(String deviceId) async* {
+    final controller = StreamController<List<Reference>>();
+
+    Future<void> poll() async {
+      while (!controller.isClosed) {
+        try {
+          final allRefs = await _listAllLogs(deviceId);
+          controller.add(allRefs);
+        } catch (e) {
+          controller.addError(e);
+        }
+        await Future.delayed(refreshInterval);
+      }
+    }
+
+    poll(); // Start polling in background
+    yield* controller.stream;
+  }
+
+  /// Private recursive list
+  Future<List<Reference>> _listAllLogs(String deviceId) async {
     final List<Reference> allRefs = [];
 
     Future<void> recursiveList(Reference ref) async {
       final result = await ref.listAll();
       allRefs.addAll(result.items); // Add files
       for (final folder in result.prefixes) {
-        await recursiveList(folder); // Dive into subfolders
+        await recursiveList(folder);
       }
     }
 
     final rootRef = _storage.ref().child('logs/$deviceId');
-    try {
-      await recursiveList(rootRef);
-      print('Total files found: ${allRefs.length}');
-      return allRefs;
-    } catch (e) {
-      print('Error listing logs: $e');
-      rethrow;
-    }
+    await recursiveList(rootRef);
+    return allRefs;
   }
 
   /// Download and decode JSON log file
@@ -35,10 +55,9 @@ class FirebaseStorageService {
 
       final jsonString = utf8.decode(data);
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
-      print('Downloaded log: ${ref.name}');
       return jsonData;
     } catch (e) {
-      print('Error downloading log ${ref.fullPath}: $e');
+      debugPrint('Error downloading log ${ref.fullPath}: $e');
       rethrow;
     }
   }
