@@ -7,7 +7,10 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notification Test')),
+      appBar: AppBar(
+        backgroundColor: Colors.pinkAccent,
+        title: const Text('Notification Testing'),
+      ),
       body: Center(
         child: ElevatedButton(
           onPressed: () async {

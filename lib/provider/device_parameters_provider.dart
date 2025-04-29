@@ -21,7 +21,7 @@ final drinkerDurationStreamProvider =
 //STREAM CAMERA
 final deviceIpStreamProvider =
     StreamProvider.family<String, String>((ref, deviceId) {
-  final refPath = 'contents/devices/$deviceId/ipAddress';
+  final refPath = 'contents/devices/$deviceId/camera_ip';
   final dbRef = FirebaseDatabase.instance.ref(refPath);
 
   return dbRef.onValue.map((event) {

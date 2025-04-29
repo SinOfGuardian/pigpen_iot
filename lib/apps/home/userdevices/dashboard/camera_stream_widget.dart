@@ -117,15 +117,15 @@ class _CameraStreamWidgetState extends ConsumerState<CameraStreamWidget> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error loading IP: $e')),
       data: (cameraIP) {
-        _streamUrl = 'http://$cameraIP/stream';
-        _snapshotUrl = 'http://$cameraIP/jpg';
+        _streamUrl = '$cameraIP/stream';
+        _snapshotUrl = '$cameraIP/jpg';
 
         final isPlaying = ref.watch(_cameraPlayingProvider);
         final isBlurred = ref.watch(_cameraBlurredProvider);
         final latency = ref.watch(_latencyProvider);
 
         _startLatencyCheck(_streamUrl!);
-
+        debugPrint('Stream URL: $_streamUrl');
         return RefreshIndicator(
           onRefresh: _refreshStream,
           child: SingleChildScrollView(
