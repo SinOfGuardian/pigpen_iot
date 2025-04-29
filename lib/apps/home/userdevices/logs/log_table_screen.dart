@@ -2,12 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:pigpen_iot/apps/home/userdevices/logs/logs_table_provider.dart';
+import 'package:tuple/tuple.dart';
 
-class LogTableScreen extends ConsumerWidget {
+class LogTableScreen extends ConsumerStatefulWidget {
   const LogTableScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<LogTableScreen> createState() => _LogTableScreenState();
+}
+
+class _LogTableScreenState extends ConsumerState<LogTableScreen> {
+  final tempMinCtrl = TextEditingController();
+  final tempMaxCtrl = TextEditingController();
+  final gasMinCtrl = TextEditingController();
+  final gasMaxCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    tempMinCtrl.dispose();
+    tempMaxCtrl.dispose();
+    gasMinCtrl.dispose();
+    gasMaxCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final selectedDate = ref.watch(selectedLogDateProvider);
     final logsAsync = ref.watch(logsByDateProvider);
     final selectedHour = ref.watch(selectedHourProvider);
@@ -49,7 +69,7 @@ class LogTableScreen extends ConsumerWidget {
               ),
             ),
 
-            // FILTERS
+            // FILTER DROPDOWNS
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
@@ -94,13 +114,104 @@ class LogTableScreen extends ConsumerWidget {
                     onPressed: () {
                       ref.read(selectedHourProvider.notifier).state = null;
                       ref.read(selectedMinuteProvider.notifier).state = null;
+                      ref.read(tempRangeProvider.notifier).state =
+                          const Tuple2(null, null);
+                      ref.read(gasRangeProvider.notifier).state =
+                          const Tuple2(null, null);
+                      tempMinCtrl.clear();
+                      tempMaxCtrl.clear();
+                      gasMinCtrl.clear();
+                      gasMaxCtrl.clear();
                     },
                   ),
                 ],
               ),
             ),
 
-            // LOGS TABLE
+            // RANGE FILTERS
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Temperature Range (°C)"),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: TextField(
+                          controller: tempMinCtrl,
+                          decoration:
+                              const InputDecoration(hintText: "Min Temp"),
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final range = ref.read(tempRangeProvider);
+                            ref.read(tempRangeProvider.notifier).state = Tuple2(
+                              double.tryParse(val),
+                              range.item2,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: TextField(
+                          controller: tempMaxCtrl,
+                          decoration:
+                              const InputDecoration(hintText: "Max Temp"),
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final range = ref.read(tempRangeProvider);
+                            ref.read(tempRangeProvider.notifier).state = Tuple2(
+                              range.item1,
+                              double.tryParse(val),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  const Text("Gas Detection Range (ppm)"),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: TextField(
+                          controller: gasMinCtrl,
+                          decoration:
+                              const InputDecoration(hintText: "Min Gas"),
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final range = ref.read(gasRangeProvider);
+                            ref.read(gasRangeProvider.notifier).state = Tuple2(
+                              double.tryParse(val),
+                              range.item2,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: TextField(
+                          controller: gasMaxCtrl,
+                          decoration:
+                              const InputDecoration(hintText: "Max Gas"),
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final range = ref.read(gasRangeProvider);
+                            ref.read(gasRangeProvider.notifier).state = Tuple2(
+                              range.item1,
+                              double.tryParse(val),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // TABLE
             Expanded(
               child: logsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),

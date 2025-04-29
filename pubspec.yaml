@@ -84,6 +84,7 @@ dependencies:
   video_player: ^2.9.5
   firebase_app_check: ^0.3.2+5
   video_thumbnail: ^0.5.3
+  tuple: ^2.0.2
 
 dev_dependencies:
   flutter_test:

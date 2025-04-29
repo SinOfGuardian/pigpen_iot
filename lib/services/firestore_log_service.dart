@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pigpen_iot/apps/home/userdevices/logs/logs_model.dart';
+import 'package:tuple/tuple.dart';
 
 class FirestoreLogService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -7,8 +8,12 @@ class FirestoreLogService {
   Future<List<LogEntry>> getLogsForDate({
     required String deviceId,
     required DateTime date,
-    String? filterHour, // add these
+    String? filterHour,
     String? filterMinute,
+    Tuple2<double?, double?>? tempRange,
+    Tuple2<double?, double?>? gasRange,
+    Tuple2<double?, double?>? humidRange,
+    Tuple2<double?, double?>? heatindexRange,
   }) async {
     final year = 'year_${date.year}';
     final month = 'month_${date.month.toString().padLeft(2, '0')}';
@@ -36,13 +41,31 @@ class FirestoreLogService {
         if (filterMinute != null && minute != filterMinute) continue;
 
         final dataMap = Map<String, dynamic>.from(minuteEntry.value);
+
+        final double temp = (dataMap['temperature'] ?? 0).toDouble();
+        final double gas = (dataMap['gas_detection'] ?? 0).toDouble();
+        final double humid = (dataMap['humidity'] ?? 0).toDouble();
+        final double heatIndex = (dataMap['heat_index'] ?? 0).toDouble();
+
+        // Apply range filters
+        if ((tempRange?.item1 != null && temp < tempRange!.item1!) ||
+            (tempRange?.item2 != null && temp > tempRange!.item2!)) continue;
+        if ((gasRange?.item1 != null && gas < gasRange!.item1!) ||
+            (gasRange?.item2 != null && gas > gasRange!.item2!)) continue;
+        if ((humidRange?.item1 != null && humid < humidRange!.item1!) ||
+            (humidRange?.item2 != null && humid > humidRange!.item2!)) continue;
+        if ((heatindexRange?.item1 != null &&
+                heatIndex < heatindexRange!.item1!) ||
+            (heatindexRange?.item2 != null &&
+                heatIndex > heatindexRange!.item2!)) continue;
+
         entries.add(
           LogEntry(
             time: "${hour.split('_')[1]}:${minute.split('_')[1]}",
-            temperature: (dataMap['temperature'] ?? 0).toDouble(),
-            humidity: (dataMap['humidity'] ?? 0).toDouble(),
-            heatIndex: (dataMap['heat_index'] ?? 0).toDouble(),
-            gasDetection: (dataMap['gas_detection'] ?? 0).toDouble(),
+            temperature: temp,
+            humidity: humid,
+            heatIndex: heatIndex,
+            gasDetection: gas,
           ),
         );
       }
