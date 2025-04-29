@@ -19,6 +19,10 @@ final humidRangeProvider =
     StateProvider<Tuple2<double?, double?>>((ref) => const Tuple2(null, null));
 final heatindexRangeProvider =
     StateProvider<Tuple2<double?, double?>>((ref) => const Tuple2(null, null));
+final showTempColumnProvider = StateProvider<bool>((ref) => true);
+final showGasColumnProvider = StateProvider<bool>((ref) => true);
+final showHumidityColumnProvider = StateProvider<bool>((ref) => true);
+final showHeatIndexColumnProvider = StateProvider<bool>((ref) => true);
 
 final deviceIdProvider = Provider<String>((ref) => 'pigpeniot_38eba81f8a3c');
 
