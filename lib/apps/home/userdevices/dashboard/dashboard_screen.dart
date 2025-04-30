@@ -27,6 +27,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    debugPrint('~ DashboardScreen build');
     return Container(
       color: colorScheme.secondaryContainer,
       child: Column(
@@ -42,19 +43,6 @@ class DashboardScreen extends StatelessWidget {
 
 class UpperSection extends ConsumerWidget {
   const UpperSection({super.key});
-
-  // Widget _camera(BuildContext context, WidgetRef ref) {
-  //   return Container(
-  //     height: 200,
-  //     decoration: BoxDecoration(
-  //       color: Colors.grey[200],
-  //       borderRadius: BorderRadius.circular(10),
-  //     ),
-  //     child: const Center(
-  //       child: Text('Camera Section'),
-  //     ),
-  //   );
-  // }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -142,7 +130,109 @@ class BottomSection extends ConsumerWidget {
     );
   }
 
-  Widget _dataSection(BuildContext context, WidgetRef ref) {
+  Widget _manualSection(BuildContext context, WidgetRef ref) {
+    final firebaseService = DeviceFirebase();
+    final sprinklerManualProvider = StateProvider<bool>((ref) => false);
+    final drinkerManualProvider = StateProvider<bool>((ref) => false);
+    final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
+    final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
+
+    // 🔘 Manual Controls
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text(
+              "Sprinkler Manual (${localSprinklerDuration}s)",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const Spacer(),
+            Consumer(builder: (context, ref, _) {
+              final isSprinklerManual = ref.watch(sprinklerManualProvider);
+              return Switch(
+                value: isSprinklerManual,
+                onChanged: (value) async {
+                  final drumLevel = ref.read(deviceStreamProvider).maybeWhen(
+                        data: (device) => device.drumwaterLevel,
+                        orElse: () => null,
+                      );
+
+                  if (value && drumLevel == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Drum is empty! Please refill before activating sprinkler.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final deviceId = ref.read(activeDeviceProvider
+                      .select((thing) => thing?.deviceId ?? '?'));
+                  ref.read(sprinklerManualProvider.notifier).state = value;
+                  await firebaseService.setManualDuration(
+                    deviceId: deviceId,
+                    type: 'sprinkler',
+                    duration: value ? localSprinklerDuration : 0,
+                  );
+                },
+              );
+            }),
+          ],
+        ),
+
+        //  const SizedBox(height: 5),
+        Row(
+          children: [
+            Text(
+              "Drinker Manual (${localDrinkerDuration}s)",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const Spacer(),
+            Consumer(builder: (context, ref, _) {
+              final isDrinkerManual = ref.watch(drinkerManualProvider);
+              return Switch(
+                value: isDrinkerManual,
+                onChanged: (value) async {
+                  final drumLevel = ref.read(deviceStreamProvider).maybeWhen(
+                        data: (device) => device.drumwaterLevel,
+                        orElse: () => null,
+                      );
+
+                  if (value && drumLevel == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Drum is empty! Please refill before activating drinker.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final deviceId = ref.read(activeDeviceProvider
+                      .select((thing) => thing?.deviceId ?? '?'));
+                  ref.read(drinkerManualProvider.notifier).state = value;
+                  await firebaseService.setManualDuration(
+                    deviceId: deviceId,
+                    type: 'drinker',
+                    duration: value ? localDrinkerDuration : 0,
+                  );
+                },
+              );
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userDevice = ref.watch(activeDeviceProvider);
+    debugPrint('~Bottom section build');
+    // final deviceId = userDevice?.deviceId ?? '';
     final deviceId = ref
         .watch(activeDeviceProvider.select((thing) => thing?.deviceId ?? '?'));
     final nextSchedule = ref
@@ -152,21 +242,48 @@ class BottomSection extends ConsumerWidget {
         .firstOrNull
         ?.dateTime;
 
+    return ShaddowedContainer(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+        child: Column(
+          // crossAxisAlignment: CrossAxisAlignment.,
+          children: [
+            const SizedBox(height: 10),
+            _deviceName(
+              context,
+              userDevice?.deviceName,
+              userDevice?.deviceId ?? '?',
+              ref,
+            ),
+            _DataField(
+              sensor: nextWatering,
+              data: null,
+              stringData: nextSchedule != null
+                  ? DateFormat('yyyy/MM/dd HH:mm a').format(nextSchedule)
+                  : 'No schedule',
+            ),
+            ReadingWidget(),
+            _manualSection(context, ref),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ReadingWidget extends ConsumerWidget {
+  const ReadingWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final deviceProvider = ref.watch(deviceStreamProvider);
-    final firebaseService = DeviceFirebase();
-    final drumManualProvider = StateProvider<bool>((ref) => false);
-    final drinkerManualProvider = StateProvider<bool>((ref) => false);
-    final localDrinkerDuration = ref.read(localDrinkerDurationProvider);
-
-    final localSprinklerDuration = ref.read(localSprinklerDurationProvider);
-
     //bool isDrinklerManual = false;
     // bool isDrumManual = false;
 
     return deviceProvider.when(
       data: (device) {
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Row 1: Heat Index + Gas
             Row(
@@ -202,136 +319,22 @@ class BottomSection extends ConsumerWidget {
 
             const SizedBox(height: 2),
 
-            // 🔘 Manual Controls
-            Row(
-              children: [
-                Text(
-                  "Sprinkler Manual (${localSprinklerDuration}s)",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const Spacer(),
-                Consumer(builder: (context, ref, _) {
-                  final isDrumManual = ref.watch(drumManualProvider);
-                  return Switch(
-                    value: isDrumManual,
-                    onChanged: (value) async {
-                      final drumLevel =
-                          ref.read(deviceStreamProvider).maybeWhen(
-                                data: (device) => device.drumwaterLevel,
-                                orElse: () => null,
-                              );
-
-                      if (value && drumLevel == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Drum is empty! Please refill before activating sprinkler.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      ref.read(drumManualProvider.notifier).state = value;
-                      await firebaseService.setManualDuration(
-                        deviceId: deviceId,
-                        type: 'sprinkler',
-                        duration: value ? localSprinklerDuration : 0,
-                      );
-                    },
-                  );
-                }),
-              ],
-            ),
-
-            //  const SizedBox(height: 5),
-            Row(
-              children: [
-                Text(
-                  "Drinker Manual (${localDrinkerDuration}s)",
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const Spacer(),
-                Consumer(builder: (context, ref, _) {
-                  final isDrinkerManual = ref.watch(drinkerManualProvider);
-                  return Switch(
-                    value: isDrinkerManual,
-                    onChanged: (value) async {
-                      final drumLevel =
-                          ref.read(deviceStreamProvider).maybeWhen(
-                                data: (device) => device.drumwaterLevel,
-                                orElse: () => null,
-                              );
-
-                      if (value && drumLevel == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Drum is empty! Please refill before activating drinker.'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
-                      ref.read(drinkerManualProvider.notifier).state = value;
-                      await firebaseService.setManualDuration(
-                        deviceId: deviceId,
-                        type: 'drinker',
-                        duration: value ? localDrinkerDuration : 0,
-                      );
-                    },
-                  );
-                }),
-              ],
-            ),
-
             // const SizedBox(height: 10),
 
             // 📅 Next Watering Time (moved here)
-            Row(
-              children: [
-                Expanded(
-                  child: _DataField(
-                    sensor: nextWatering,
-                    data: null,
-                    stringData: nextSchedule != null
-                        ? DateFormat('yyyy/MM/dd HH:mm a').format(nextSchedule)
-                        : 'No schedule',
-                  ),
-                ),
-              ],
-            ),
+
+            // _DataField(
+            //   sensor: nextWatering,
+            //   data: null,
+            //   stringData: nextSchedule != null
+            //       ? DateFormat('yyyy/MM/dd HH:mm a').format(nextSchedule)
+            //       : 'No schedule',
+            // ),
           ],
         );
       },
       loading: () => const AppCircularProgressIndicator(),
       error: (e, st) => AppErrorWidget(e as Exception, st, this),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final userDevice = ref.watch(activeDeviceProvider);
-    // final deviceId = userDevice?.deviceId ?? '';
-
-    return ShaddowedContainer(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 10),
-            _deviceName(
-              context,
-              userDevice?.deviceName,
-              userDevice?.deviceId ?? '?',
-              ref,
-            ),
-            Expanded(child: _dataSection(context, ref)),
-          ],
-        ),
-      ),
     );
   }
 }

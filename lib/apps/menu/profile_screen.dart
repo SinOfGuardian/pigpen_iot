@@ -206,16 +206,12 @@ class ProfileScreen extends ConsumerWidget with InternetConnection {
                     .read(activeUserProvider.notifier)
                     .updateFullname(updatedFirstName, updatedLastName);
 
-                if (context.mounted) {
-                  context.showSnackBar('Name Updated Successfully',
-                      theme: SnackbarTheme.success);
-                  Navigator.of(context).pop();
-                }
+                context.showSnackBar('Name Updated Successfully',
+                    theme: SnackbarTheme.success);
+                Navigator.of(context).pop();
               } catch (e) {
-                if (context.mounted) {
-                  context.showSnackBar('Failed to update name: $e',
-                      theme: SnackbarTheme.error);
-                }
+                context.showSnackBar('Failed to update name: $e',
+                    theme: SnackbarTheme.error);
               }
             },
             child: const Text('Update'),
