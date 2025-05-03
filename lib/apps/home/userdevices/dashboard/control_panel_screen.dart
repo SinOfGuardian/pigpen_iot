@@ -137,7 +137,7 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                   _buildParamEditor("Heat Index", "heatindex_trigger_value",
                       params, isEditMode, 20, 100),
                   _buildParamEditor("Temperature", "temp_trigger_value", params,
-                      isEditMode, 10, 50),
+                      isEditMode, 10, 60),
                   _buildParamEditor("PPM Min", "ppm_trigger_min_value", params,
                       isEditMode, 0, 50),
                   _buildParamEditor("PPM Max", "ppm_trigger_max_value", params,
@@ -162,7 +162,10 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                 if (confirmed) {
                   await DeviceFirebase()
                       .resetParametersToDefault(widget.deviceId);
+                  await DeviceFirebase().fetchESP32(widget.deviceId);
+
                   ref.invalidate(parameterStreamProvider(widget.deviceId));
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text("Parameters reset to default")),
@@ -246,6 +249,9 @@ class _ControlPanelScreenState extends ConsumerState<ControlPanelScreen> {
                   key: key,
                   value: parsed,
                 );
+
+                await DeviceFirebase().fetchESP32(widget.deviceId);
+
                 ref.invalidate(parameterStreamProvider(widget.deviceId));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('$label updated to $parsed')),

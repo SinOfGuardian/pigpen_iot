@@ -107,15 +107,23 @@ class DeviceFirebase {
 
   Future<void> resetParametersToDefault(String deviceId) async {
     const defaultParams = {
-      'heatindex_trigger_value': 65,
+      'heatindex_trigger_value': 80,
       'ppm_trigger_min_value': 15,
       'ppm_trigger_max_value': 20,
       'temp_trigger_value': 42,
+      'sprinkler_pump_volts': 0,
+      'drinker_pump_volts': 0,
     };
 
     await _database
         .ref('/realtime/devices/$deviceId/parameters')
         .set(defaultParams);
+  }
+
+  Future<void> fetchESP32(String deviceId) async {
+    await _database
+        .ref('$_path/$deviceId/variables')
+        .update({'esp_command': 'fetch_parameters'});
   }
 }
 
