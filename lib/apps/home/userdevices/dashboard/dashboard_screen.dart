@@ -501,6 +501,22 @@ class _DataField extends StatelessWidget {
         }
         break;
 
+      case drinkerwaterSensor:
+        if (data == 0) {
+          notificationTitle = '🚰 Refill Reminder';
+          notificationBody = '${sensor.title} needs refilling.';
+          shouldNotify = true;
+        }
+        break;
+
+      case drumwaterSensor:
+        if (data == 0) {
+          notificationTitle = '🚰 Refill Reminder';
+          notificationBody = '${sensor.title} needs refilling.';
+          shouldNotify = true;
+        }
+        break;
+
       default:
         break;
     }
