@@ -35,6 +35,7 @@ Future<void> main() async {
 
   debugPrint("✅ Firebase App Check activated in debug mode");
   await Future.delayed(const Duration(milliseconds: 300));
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   runApp(const ProviderScope(child: MyApp()));
 }
 

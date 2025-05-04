@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -143,6 +144,12 @@ class NotificationService {
   }
 
   // Firebase Cloud Messaging setup
+
+  static Future<void> saveFCMToken(String token, String userId) async {
+    final database = FirebaseDatabase.instance;
+    await database.ref('/users/$userId/fcmToken').set(token);
+  }
+
   static Future<void> _initFirebaseMessaging() async {
     if (!_fcmInitialized) {
       await FirebaseMessaging.instance
@@ -160,6 +167,16 @@ class NotificationService {
       FirebaseMessaging.instance
           .getInitialMessage()
           .then(_handleTerminatedMessage);
+
+      // ✅ Get and save FCM token after initializing
+      String? token = await FirebaseMessaging.instance.getToken();
+      debugPrint('📱 FCM Token: $token');
+
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (token != null && user != null) {
+        await saveFCMToken(token, user.uid);
+      }
 
       _fcmInitialized = true;
     }
@@ -211,6 +228,19 @@ class NotificationService {
   static Future<void> _handleTerminatedMessage(RemoteMessage? message) async {
     if (message != null) {
       await showNotificationFromFirebase(message);
+    }
+  }
+
+  static Future<void> showNotificationFromFirebase(
+      RemoteMessage message) async {
+    final notification = message.notification;
+    final android = message.notification?.android;
+    if (notification != null && android != null) {
+      await showNotification(
+        title: notification.title ?? '',
+        body: notification.body ?? '',
+        payload: message.data['payload'],
+      );
     }
   }
 
@@ -289,48 +319,5 @@ class NotificationService {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
-  }
-
-  static Future<void> showNotificationFromFirebase(
-      RemoteMessage message) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
-      'pig_wash_channel',
-      'Pig Wash Alerts',
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-    );
-
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const NotificationDetails notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notifications.show(
-      message.hashCode,
-      message.notification?.title ?? "PigPen Alert",
-      message.notification?.body ?? "New alert from PigPen",
-      notificationDetails,
-      payload: message.data.toString(),
-    );
-  }
-
-  static Future<String?> getFCMToken() async {
-    return await FirebaseMessaging.instance.getToken();
-  }
-
-  static Future<void> subscribeToTopic(String topic) async {
-    await FirebaseMessaging.instance.subscribeToTopic(topic);
-  }
-
-  static Future<void> unsubscribeFromTopic(String topic) async {
-    await FirebaseMessaging.instance.unsubscribeFromTopic(topic);
   }
 }
