@@ -85,6 +85,7 @@ dependencies:
   firebase_app_check: ^0.3.2+5
   video_thumbnail: ^0.5.3
   tuple: ^2.0.2
+  badges: ^3.1.2
 
 dev_dependencies:
   flutter_test:

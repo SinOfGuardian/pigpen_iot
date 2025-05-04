@@ -1,33 +1,56 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:pigpen_iot/services/notification_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NotificationScreen extends StatelessWidget {
+import 'package:pigpen_iot/provider/notification_provider.dart';
+
+class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.pinkAccent,
-        title: const Text('Notification Testing'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            final now = DateTime.now().add(const Duration(seconds: 5));
-            const testDeviceId = 'testDeviceId';
-            const testScheduleKey = 'testKey123';
-            const testCategory = 'shower';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncNotifs = ref.watch(firestoreNotificationProvider);
 
-            await NotificationService.scheduleLocalNotification(
-              title: 'PigPen Reminder',
-              body: 'Time to $testCategory the pigs!',
-              scheduledTime: now,
-              payload: '$testDeviceId|$testScheduleKey|$testCategory',
+    return Scaffold(
+      body: asyncNotifs.when(
+        data: (notifs) => ListView.builder(
+          itemCount: notifs.length,
+          itemBuilder: (context, index) {
+            final notification = notifs[index];
+
+            return Dismissible(
+              key: Key(notification.id),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                color: Colors.green,
+                child: const Icon(Icons.done, color: Colors.white),
+              ),
+              confirmDismiss: (_) async {
+                final userId =
+                    'exampleUserId'; // Replace with actual user ID retrieval logic
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .collection('notifications')
+                    .doc(notification.id)
+                    .update({'isRead': true});
+                return false; // prevent dismissal but mark as read
+              },
+              child: ListTile(
+                title: Text(notification.title),
+                subtitle: Text(notification.body),
+                trailing: notification.isRead
+                    ? null
+                    : const Icon(Icons.fiber_manual_record,
+                        size: 12, color: Colors.red),
+              ),
             );
           },
-          child: const Text('Send Test Notification (5 sec)'),
         ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }

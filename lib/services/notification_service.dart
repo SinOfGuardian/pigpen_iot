@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:pigpen_iot/apps/notification/notification_model.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
@@ -14,6 +16,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class NotificationService {
   static final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+
   static bool _tzInitialized = false;
   static bool _fcmInitialized = false;
 
@@ -234,11 +237,38 @@ class NotificationService {
   static Future<void> showNotificationFromFirebase(
       RemoteMessage message) async {
     final notification = message.notification;
-    final android = message.notification?.android;
+    final android = notification?.android;
+
     if (notification != null && android != null) {
-      await showNotification(
+      final newNotif = NotificationItem(
+        id: '', // Firestore will generate it
         title: notification.title ?? '',
         body: notification.body ?? '',
+        timestamp: DateTime.now(),
+      );
+
+      //  Save to Firestore only
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('notifications')
+            .add(newNotif.toMap());
+        debugPrint("✅ Notification saved to Firestore");
+      }
+
+      await _notifications.show(
+        DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        notification.title,
+        notification.body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'pig_wash_channel',
+            'Pig Wash Alerts',
+            importance: Importance.high,
+          ),
+        ),
         payload: message.data['payload'],
       );
     }
@@ -248,10 +278,24 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
-    String? channelId,
   }) async {
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
+    final user = FirebaseAuth.instance.currentUser;
+    final newNotif = NotificationItem(
+      id: '',
+      title: title,
+      body: body,
+      timestamp: DateTime.now(),
+    );
+
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .add(newNotif.toMap());
+    }
+
+    const androidDetails = AndroidNotificationDetails(
       'pig_wash_channel',
       'Pig Wash Alerts',
       importance: Importance.high,
@@ -260,22 +304,22 @@ class NotificationService {
       enableVibration: true,
     );
 
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+    const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
 
     await _notifications.show(
-      0,
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title,
       body,
-      notificationDetails,
+      details,
       payload: payload,
     );
   }
@@ -286,11 +330,26 @@ class NotificationService {
     required DateTime scheduledTime,
     String? payload,
   }) async {
-    final tz.TZDateTime scheduledTz =
-        tz.TZDateTime.from(scheduledTime, tz.local);
+    final user = FirebaseAuth.instance.currentUser;
 
-    const AndroidNotificationDetails androidDetails =
-        AndroidNotificationDetails(
+    final notification = NotificationItem(
+      id: '',
+      title: title,
+      body: body,
+      timestamp: scheduledTime,
+    );
+
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('notifications')
+          .add(notification.toMap());
+    }
+
+    final tzTime = tz.TZDateTime.from(scheduledTime, tz.local);
+
+    const androidDetails = AndroidNotificationDetails(
       'pig_wash_channel',
       'Pig Wash Alerts',
       importance: Importance.high,
@@ -299,13 +358,13 @@ class NotificationService {
       enableVibration: true,
     );
 
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+    const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
     );
 
-    const NotificationDetails notificationDetails = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -314,10 +373,10 @@ class NotificationService {
       scheduledTime.millisecondsSinceEpoch.remainder(100000),
       title,
       body,
-      scheduledTz,
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      tzTime,
+      details,
       payload: payload,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 }

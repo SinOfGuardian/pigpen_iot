@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/custom/NotificationBellDropdown.dart';
 import 'package:pigpen_iot/custom/app_icon.dart';
 import 'package:pigpen_iot/modules/string_extensions.dart';
 import 'package:pigpen_iot/provider/user_provider.dart';
@@ -193,14 +194,7 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
                 },
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.notifications),
-              onPressed: () {
-                // Navigate to the NotificationPractice screen
-                null;
-              },
-              highlightColor: colorScheme.primary.withOpacity(0.6),
-            ),
+            NotificationBellDropdown(),
             Padding(
               padding: const EdgeInsets.only(left: .05),
               child: Image.asset(

@@ -40,7 +40,7 @@ class _UserDevicePageViewState extends ConsumerState<UserDevicePageView> {
       // extendBodyBehindAppBar: true,
       appBar: TitledAppBar(
         leadingIcon: EvaIcons.arrowBackOutline,
-        trailingIcon: EvaIcons.questionMark,
+        trailingIcon: EvaIcons.infoOutline,
         trailingAction: () {},
       ),
       body: PageView(

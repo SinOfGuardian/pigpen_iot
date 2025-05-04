@@ -460,13 +460,13 @@ class _DataField extends StatelessWidget {
 
     // Use params as dynamic thresholds
     final hiLimit =
-        num.tryParse(params['heatindex_trigger_value']?.toString() ?? '') ?? 66;
+        num.tryParse(params['heatindex_trigger_value']?.toString() ?? '') ?? 80;
     final ppmMin =
-        num.tryParse(params['ppm_trigger_min_value']?.toString() ?? '') ?? 21;
+        num.tryParse(params['ppm_trigger_min_value']?.toString() ?? '') ?? 0;
     final ppmMax =
-        num.tryParse(params['ppm_trigger_max_value']?.toString() ?? '') ?? 26;
+        num.tryParse(params['ppm_trigger_max_value']?.toString() ?? '') ?? 25;
     final tempLimit =
-        num.tryParse(params['temp_trigger_value']?.toString() ?? '') ?? 41;
+        num.tryParse(params['temp_trigger_value']?.toString() ?? '') ?? 42;
 
     switch (sensor) {
       case gasSensor:
