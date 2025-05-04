@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pigpen_iot/apps/home/devices/device_list.dart';
 
 import 'package:pigpen_iot/provider/notification_provider.dart';
+import 'package:pigpen_iot/provider/userdevices_provider.dart';
 
 class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
@@ -28,8 +31,7 @@ class NotificationScreen extends ConsumerWidget {
                 child: const Icon(Icons.done, color: Colors.white),
               ),
               confirmDismiss: (_) async {
-                final userId =
-                    'exampleUserId'; // Replace with actual user ID retrieval logic
+                final userId = FirebaseAuth.instance.currentUser?.uid;
                 await FirebaseFirestore.instance
                     .collection('users')
                     .doc(userId)
