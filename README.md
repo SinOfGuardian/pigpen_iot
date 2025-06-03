@@ -1,9 +1,3 @@
-[![GitHub Personal Access Token ...](https://images.openai.com/thumbnails/a6801256c5692a1ac1406eb6b941f40c.jpeg)](https://cmakkaya.medium.com/using-a-private-github-repository-with-a-github-personal-access-token-in-the-jenkins-pipeline-3f3755725fd1)
-
-Absolutely! Here's a comprehensive `README.md` for your [pigpen\_iot](https://github.com/SinOfGuardian/pigpen_iot) repository. This README outlines the project's purpose, features, technologies used, and provides guidance on setup and contribution.
-
----
-
 # 🐷 Pigpen IoT: Smart Pig Farming Monitoring System
 
 **Pigpen IoT** is an innovative Internet of Things (IoT) solution designed to enhance pig farming operations. By integrating real-time monitoring, data analytics, and automation, this system aims to improve animal welfare, optimize resource usage, and increase farm productivity.
