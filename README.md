@@ -126,7 +126,12 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 📬 Contact
 
-For questions or support, please open an issue on the [GitHub repository](https://github.com/SinOfGuardian/pigpen_iot/issues).
+For questions, support, or collaboration opportunities, feel free to reach out:
+
+📧 Email: nathanielvalenzuela05@gmail.com
+
+💻 GitHub: github.com/SinOfGuardian
+
 
 ---
 
